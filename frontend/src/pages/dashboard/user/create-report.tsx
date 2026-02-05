@@ -2,7 +2,6 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, ChevronLeft, ChevronRight, Loader2, Upload, X, FileText } from "lucide-react";
-import { reportsApi, toolsApi, filesApi, type FileUploadResponse } from "@/services/apiClient";
 import { toast } from "react-toastify";
 
 import {
@@ -15,6 +14,8 @@ import {
 } from "@/config/create-report.config";
 import { Button } from "@/components/ui/button";
 import type { Tool } from "@/types/report";
+import type { FileUploadResponse } from "@/types/files";
+import { filesApi, reportsApi, toolsApi } from "@/services";
 
 /* ---------------------------------- */
 /* Types */
@@ -117,7 +118,7 @@ const CreateReport: React.FC = () => {
 
     async function loadTool(id: string) {
       try {
-        const fetchedTool = await toolsApi.getTool(id);
+        const fetchedTool = await toolsApi.getById(id);
         setTool(fetchedTool);
         if (fetchedTool.industry) {
           setFormData(prev => ({ ...prev, industry: fetchedTool.industry || "" }));

@@ -22,7 +22,7 @@ const menuItems = [
 
   // Tools & Report Configuration
   { icon: Sparkles, label: "Manage Tools", path: "/admin/tools" },
-  { icon: Sliders, label: "Report Configurations", path: "/admin/report-configs" },
+  // { icon: Sliders, label: "Report Configurations", path: "/admin/report-configs" },
 
   // Data & Content
   { icon: FileText, label: "All Reports", path: "/admin/reports" },

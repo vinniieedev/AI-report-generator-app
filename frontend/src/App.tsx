@@ -62,7 +62,7 @@ export default function App() {
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminOverview />} />
 
-            <Route path="tools" element={<AdminTools />} />
+            <Route path="tools" element={<AdminReportConfigs />} />
             <Route path="report-configs" element={<AdminReportConfigs />} />
 
             <Route path="reports" element={<AdminReports />} />

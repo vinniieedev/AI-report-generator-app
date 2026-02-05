@@ -1,4 +1,4 @@
-import type { CreditBalance, CreditTransaction } from "./apiClient"
+import type { CreditBalance, CreditTransaction } from "@/types/credit"
 import { apiClient } from "./client"
 
 export const creditsApi = {

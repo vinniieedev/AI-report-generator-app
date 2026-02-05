@@ -1,4 +1,8 @@
-import type { CreateReportPayload, ReportResponse } from "@/types/report"
+import type {
+  CreateReportPayload,
+  ReportResponse,
+} from "@/types/report"
+
 import { apiClient } from "./client"
 
 export const reportsApi = {
@@ -22,5 +26,21 @@ export const reportsApi = {
 
   getById(reportId: string) {
     return apiClient<ReportResponse>(`/reports/${reportId}`)
+  },
+
+  exportPdf(reportId: string) {
+    return apiClient<Blob>(
+      `/reports/${reportId}/export/pdf`,
+      {},
+      "blob"
+    )
+  },
+
+  exportMarkdown(reportId: string) {
+    return apiClient<Blob>(
+      `/reports/${reportId}/export/markdown`,
+      {},
+      "blob"
+    )
   },
 }

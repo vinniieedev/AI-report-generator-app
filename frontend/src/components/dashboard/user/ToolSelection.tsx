@@ -2,9 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Sparkles } from "lucide-react";
-import { toolsApi } from "@/services/apiClient";
 import { Button } from "@/components/ui/button";
 import type { Tool } from "@/types/report";
+import { toolsApi } from "@/services";
 
 /* ----------------------------------
    Types
@@ -92,7 +92,7 @@ const ToolSelection: React.FC = () => {
 
   const fetchTools = async (): Promise<void> => {
     try {
-      const data = await toolsApi.getTools(); 
+      const data = await toolsApi.getAll(); 
       setTools(data);
       setFilteredTools(data);
     } catch (err) {

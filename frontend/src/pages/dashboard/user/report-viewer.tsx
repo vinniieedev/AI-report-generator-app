@@ -27,7 +27,8 @@ import { Bar, Pie, Line, Doughnut } from "react-chartjs-2";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "react-toastify";
-import { reportsApi, type ReportResponse, type ChartData } from "@/services/apiClient";
+import type { ChartData, ReportResponse } from "@/types/report";
+import { reportsApi } from "@/services";
 
 // Register ChartJS components
 ChartJS.register(

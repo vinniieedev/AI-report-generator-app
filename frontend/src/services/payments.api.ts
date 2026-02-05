@@ -1,4 +1,4 @@
-import type { CreditPackage } from "@/types/payment"
+import type { CreditPackage, PaymentResponse } from "@/types/payment"
 import { apiClient } from "./client"
 
 export const paymentsApi = {

@@ -10,7 +10,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { reportsApi, type ReportResponse } from "@/services/apiClient";
+import type { ReportResponse } from "@/types/report";
+import { reportsApi } from "@/services";
 
 export function ReportsTable() {
   const navigate = useNavigate();

@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Sparkles, FileText, TrendingUp, Zap } from 'lucide-react';
 import { useAuth } from '@/hooks/auth/useAuth';
-import { creditsApi, reportsApi, type CreditBalance, type ReportResponse } from '@/services/apiClient';
+import type { CreditBalance } from '@/types/credit';
+import type { ReportResponse } from '@/types/report';
+import { creditsApi, reportsApi } from '@/services';
 
 const DashboardOverview = () => {
   const { user } = useAuth();

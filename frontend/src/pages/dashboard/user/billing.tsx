@@ -5,15 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "react-toastify";
 import { useAuth } from "@/hooks/auth/useAuth";
-import {
-  subscriptionsApi,
-  paymentsApi,
-  creditsApi,
-  type SubscriptionPlan,
-  type CreditPackage,
-  type CreditBalance,
-  type UserSubscription,
-} from "@/services/apiClient";
+import type { SubscriptionPlan, UserSubscription } from "@/types/subscription";
+import type { CreditPackage } from "@/types/payment";
+import type { CreditBalance } from "@/types/credit";
+import { creditsApi, paymentsApi, subscriptionsApi } from "@/services";
+
 
 export default function Billing() {
   const { user } = useAuth();
