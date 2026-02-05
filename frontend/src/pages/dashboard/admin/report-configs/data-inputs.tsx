@@ -24,6 +24,7 @@ type DataInputField = {
   options?: string[];
 };
 
+
 /* ----------------------------------
    Component
 ----------------------------------- */
@@ -57,6 +58,13 @@ export default function AdminReportDataInputs() {
   const removeField = (id: string) => {
     setFields((prev) => prev.filter((f) => f.id !== id));
   };
+
+  function handleSaveConfiguration() {
+    console.log("Saving configuration for report ID:", reportId);
+    console.log("Fields:", fields);
+    
+  }
+
 
   return (
     <div className="space-y-8 max-w-4xl">
@@ -179,7 +187,7 @@ export default function AdminReportDataInputs() {
       {/* Footer */}
       <div className="flex justify-end gap-4 pt-6 border-t">
         <Button variant="secondary">Cancel</Button>
-        <Button>Save Configuration</Button>
+        <Button onClick={handleSaveConfiguration}>Save Configuration</Button>
       </div>
     </div>
   );

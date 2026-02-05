@@ -1,14 +1,11 @@
-import {
-  getCurrentUser,
-  loginUser,
-  registerUser,
-  type AuthUser,
-} from "@/auth/auth"
+
 import { clearToken, getToken, setToken } from "@/lib/utils"
 import { extractApiError } from "@/lib/api-error"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { toast } from "react-toastify"
+import type { AuthUser } from "@/types/auth"
+import { authApi } from "@/services"
 
 export function useAuth() {
   const navigate = useNavigate()
@@ -31,7 +28,7 @@ export function useAuth() {
 
     async function restore() {
       try {
-        const user = await getCurrentUser()
+        const user = await authApi.getCurrentUser()
         if (!cancelled) {
           setUser(user)
         }
@@ -57,7 +54,7 @@ export function useAuth() {
   /* ---------- login ---------- */
   const login = async (email: string, password: string) => {
     try {
-      const { token, ...user } = await loginUser(email, password)
+      const { token, ...user } = await authApi.loginUser(email, password)
 
       setToken(token)
       setTokenState(token)
@@ -81,7 +78,7 @@ export function useAuth() {
     fullName: string
   ) => {
     try {
-      const { token, ...user } = await registerUser(
+      const { token, ...user } = await authApi.registerUser(
         email,
         password,
         fullName

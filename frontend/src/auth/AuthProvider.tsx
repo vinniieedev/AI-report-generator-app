@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { AuthContext, type User } from "./AuthContext"
-import { getCurrentUser } from "@/auth/auth"
 import { getToken, clearToken } from "@/lib/utils"
+import { authApi } from "@/services"
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
@@ -21,7 +21,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     async function restore() {
       try {
-        const user = await getCurrentUser()
+        const user = await authApi.getCurrentUser()
         if (!cancelled) {
           setUser(user)
         }
