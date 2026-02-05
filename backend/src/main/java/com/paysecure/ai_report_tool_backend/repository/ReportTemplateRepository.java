@@ -1,0 +1,13 @@
+package com.paysecure.ai_report_tool_backend.repository;
+
+import com.paysecure.ai_report_tool_backend.model.ReportTemplate;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Optional;
+import java.util.UUID;
+
+public interface ReportTemplateRepository
+        extends JpaRepository<ReportTemplate, UUID> {
+
+    Optional<ReportTemplate> findByToolId(String toolId);
+}
