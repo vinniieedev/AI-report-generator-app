@@ -6,6 +6,7 @@ import com.paysecure.ai_report_tool_backend.model.ReportTemplate;
 import com.paysecure.ai_report_tool_backend.repository.ReportTemplateRepository;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -65,7 +66,7 @@ public class ToolController {
         }
         
         // Fallback to static list
-        return TOOLS;
+        return new ArrayList<ToolResponse>();
     }
 
     @GetMapping("/{toolId}")

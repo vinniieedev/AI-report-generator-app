@@ -21,7 +21,7 @@ const menuItems = [
   { icon: Home, label: "Admin Overview", path: "/admin" },
 
   // Tools & Report Configuration
-  { icon: Sparkles, label: "Manage Tools", path: "/admin/tools" },
+  { icon: Sparkles, label: "Manage Tools", path: "/admin/report-configs" },
   // { icon: Sliders, label: "Report Configurations", path: "/admin/report-configs" },
 
   // Data & Content

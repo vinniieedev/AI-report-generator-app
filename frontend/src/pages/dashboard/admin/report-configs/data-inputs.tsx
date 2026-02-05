@@ -1,194 +1,204 @@
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Trash } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { useParams } from "react-router-dom";
+import { useEffect, useState } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import { Plus, Trash } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Switch } from "@/components/ui/switch"
+import { useParams } from "react-router-dom"
 
-/* ----------------------------------
-   Types
------------------------------------ */
+import { useAdminReportTemplate } from "@/hooks/useAdminReportTemplate"
+import type {
+  InputFieldRequest,
+  InputFieldResponse,
+  InputFieldType,
+} from "@/types/report-template"
 
-type InputFieldType = "text" | "number" | "textarea" | "select" | "file";
-
-type DataInputField = {
-  id: string;
-  label: string;
-  description?: string;
-  type: InputFieldType;
-  required: boolean;
-
-  placeholder?: string;
-  options?: string[];
-};
-
-
-/* ----------------------------------
-   Component
------------------------------------ */
+/* ---------------------------------- */
 
 export default function AdminReportDataInputs() {
-  const [fields, setFields] = useState<DataInputField[]>([]);
-  const { reportId } = useParams<{ reportId: string }>();
-  const addField = () => {
-  setFields((prev) => [
-    ...prev,
-    {
-      id: crypto.randomUUID(),
-      label: "New Field",
-      description: "",
-      type: "text",
-      required: false,
-    },
-  ]);
-};
+const { templateId } = useParams<{ templateId: string }>()
+  const {
+    template,
+    loading,
+    addField,
+    updateField,
+    deleteField,
+  } = useAdminReportTemplate(templateId!)
 
-  const updateField = <K extends keyof DataInputField>(
-    id: string,
-    key: K,
-    value: DataInputField[K]
-  ) => {
-    setFields((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, [key]: value } : f))
-    );
-  };
+  const [editingField, setEditingField] =
+    useState<InputFieldResponse | null>(null)
 
-  const removeField = (id: string) => {
-    setFields((prev) => prev.filter((f) => f.id !== id));
-  };
-
-  function handleSaveConfiguration() {
-    console.log("Saving configuration for report ID:", reportId);
-    console.log("Fields:", fields);
-    
+  const emptyField: InputFieldRequest = {
+    label: "",
+    description: "",
+    type: "TEXT",
+    required: false,
+    minValue: null,
+    maxValue: null,
+    options: null,
+    sortOrder: template?.inputFields.length ?? 0,
   }
 
+  const [form, setForm] = useState<InputFieldRequest>(emptyField)
+
+  useEffect(() => {
+    if (template) {
+      setForm({
+        ...emptyField,
+        sortOrder: template.inputFields.length,
+      })
+    }
+  }, [template])
+
+  function handleChange<K extends keyof InputFieldRequest>(
+    key: K,
+    value: InputFieldRequest[K]
+  ) {
+    setForm(prev => ({ ...prev, [key]: value }))
+  }
+
+  async function handleSubmit() {
+    if (editingField) {
+      await updateField(editingField.id, form)
+      setEditingField(null)
+    } else {
+      await addField(form)
+    }
+
+    setForm(emptyField)
+  }
+
+  function handleEdit(field: InputFieldResponse) {
+    setEditingField(field)
+    setForm({
+      label: field.label,
+      description: field.description,
+      type: field.type,
+      required: field.required,
+      minValue: field.minValue,
+      maxValue: field.maxValue,
+      options: field.options,
+      sortOrder: field.sortOrder,
+    })
+  }
+
+  if (loading) return <div>Loading...</div>
+  if (!template) return <div>No template found</div>
 
   return (
     <div className="space-y-8 max-w-4xl">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Data Input Configuration</h1>
-            <p className="text-sm text-muted-foreground">
-                Configuring inputs for report ID: {reportId}
-            </p>
-        </div>
 
-        <Button onClick={addField}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Field
-        </Button>
-      </div>
+      <h1 className="text-3xl font-bold">
+        {template.title} – Input Fields
+      </h1>
 
-      {/* Fields */}
+      {/* Add / Edit Form */}
+      <Card>
+        <CardContent className="p-6 space-y-4">
+
+          <Input
+            placeholder="Label"
+            value={form.label}
+            onChange={(e) => handleChange("label", e.target.value)}
+          />
+
+          <textarea
+            value={form.description}
+            onChange={(e) => handleChange("description", e.target.value)}
+            placeholder="Description"
+            className="w-full min-h-[80px] px-3 py-2 border rounded-md"
+          />
+
+          <select
+            value={form.type}
+            onChange={(e) =>
+              handleChange("type", e.target.value as InputFieldType)
+            }
+            className="w-full border rounded-md px-3 py-2"
+          >
+            <option value="TEXT">TEXT</option>
+            <option value="NUMBER">NUMBER</option>
+            <option value="TEXTAREA">TEXTAREA</option>
+            <option value="SELECT">SELECT</option>
+            <option value="DATE">DATE</option>
+            <option value="BOOLEAN">BOOLEAN</option>
+          </select>
+
+          <div className="flex items-center gap-3">
+            <Switch
+              checked={form.required}
+              onCheckedChange={(v) =>
+                handleChange("required", v)
+              }
+            />
+            <span>Required</span>
+          </div>
+
+          {form.type === "SELECT" && (
+            <Input
+              placeholder="Comma separated options"
+              value={form.options?.join(",") ?? ""}
+              onChange={(e) =>
+                handleChange(
+                  "options",
+                  e.target.value.split(",").map(o => o.trim())
+                )
+              }
+            />
+          )}
+
+          <Button onClick={handleSubmit}>
+            {editingField ? "Update Field" : "Add Field"}
+          </Button>
+
+        </CardContent>
+      </Card>
+
+      {/* Existing Fields */}
       <AnimatePresence>
-        {fields.length === 0 ? (
-          <p className="text-muted-foreground text-center py-12">
-            No input fields added yet
-          </p>
-        ) : (
-          fields.map((field, index) => (
-            <motion.div
-              key={field.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-            >
-              <Card>
-                <CardContent className="p-6 space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h3 className="font-semibold">
-                      Field {index + 1}
-                    </h3>
+        {template.inputFields.map((field, index) => (
+          <motion.div
+            key={field.id}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <Card>
+              <CardContent className="p-4 flex justify-between items-center">
 
-                    <Button
-                      variant="secondary"
-                      size="icon"
-                      onClick={() => removeField(field.id)}
-                    >
-                      <Trash className="h-4 w-4 text-red-500" />
-                    </Button>
-                  </div>
+                <div>
+                  <p className="font-medium">
+                    {index + 1}. {field.label}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {field.type}
+                  </p>
+                </div>
 
-                  {/* Label */}
-                  <Input
-                    value={field.label}
-                    onChange={(e) =>
-                      updateField(field.id, "label", e.target.value)
-                    }
-                    placeholder="Field label"
-                  />
-                  {/* Description */}
-                    <textarea
-                        value={field.description ?? ""}
-                        onChange={(e) =>
-                            updateField(field.id, "description", e.target.value)
-                        }
-                        placeholder="Description shown to users (e.g. Upload last 6 months bank statement)"
-                        className="w-full min-h-[80px] px-3 py-2 text-sm rounded-md border resize-none"
-                    />
-
-                  {/* Type */}
-                  <select
-                    value={field.type}
-                    onChange={(e) =>
-                      updateField(
-                        field.id,
-                        "type",
-                        e.target.value as InputFieldType
-                      )
-                    }
-                    className="w-full border rounded-md px-3 py-2 text-sm"
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => handleEdit(field)}
                   >
-                    <option value="text">Text</option>
-                    <option value="textarea">Textarea</option>
-                    <option value="number">Number</option>
-                    <option value="select">Select</option>
-                    <option value="file">File</option>
-                  </select>
+                    Edit
+                  </Button>
 
-                  {/* Required */}
-                  <div className="flex items-center gap-3">
-                    <Switch
-                      checked={field.required}
-                      onCheckedChange={(v) =>
-                        updateField(field.id, "required", v)
-                      }
-                    />
-                    <span className="text-sm">Required</span>
-                  </div>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => deleteField(field.id)}
+                  >
+                    <Trash className="h-4 w-4 text-red-500" />
+                  </Button>
+                </div>
 
-                  {/* Select Options */}
-                  {field.type === "select" && (
-                    <Input
-                      placeholder="Comma separated options"
-                      value={field.options?.join(",") ?? ""}
-                      onChange={(e) =>
-                        updateField(
-                          field.id,
-                          "options",
-                          e.target.value
-                            .split(",")
-                            .map((o) => o.trim())
-                        )
-                      }
-                    />
-                  )}
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))
-        )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
       </AnimatePresence>
 
-      {/* Footer */}
-      <div className="flex justify-end gap-4 pt-6 border-t">
-        <Button variant="secondary">Cancel</Button>
-        <Button onClick={handleSaveConfiguration}>Save Configuration</Button>
-      </div>
     </div>
-  );
+  )
 }

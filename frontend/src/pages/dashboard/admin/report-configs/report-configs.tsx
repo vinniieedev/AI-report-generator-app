@@ -4,8 +4,12 @@ import { Search, Plus, FileText } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { MOCK_TOOLS } from "@/config/create-report.config";
+// import { MOCK_TOOLS } from "@/config/create-report.config";
 import { useNavigate } from "react-router-dom";
+// import { adminReportTemplatesApi } from "@/services/adminReportTemplates.api";
+// import type { ReportTemplateResponse } from "@/types/report-template";
+import { toolsApi } from "@/services";
+import type { Tool } from "@/types/report";
 
 
 /* ----------------------------------
@@ -74,9 +78,27 @@ export default function AdminReportConfigs() {
   ----------------------------------- */
 
   useEffect(() => {
-    setReports(MOCK_TOOLS);
-    setFilteredReports(MOCK_TOOLS);
-  }, []);
+  async function fetchTemplates() {
+    try {
+      const data = await toolsApi.getAll();
+
+      const mapped: Tool[] = data.map((t: Tool) => ({
+        id: t.id,
+        title: t.title,
+        description: t.description,
+        category: t.category,
+        industry: t.industry,
+      }));
+
+      setReports(mapped);
+      setFilteredReports(mapped);
+    } catch (error) {
+      console.error("Failed to fetch templates", error);
+    }
+  }
+
+  fetchTemplates();
+}, []);
 
   useEffect(() => {
     filterReports();

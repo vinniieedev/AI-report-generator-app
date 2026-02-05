@@ -38,12 +38,13 @@ import AdminUsers from "@/pages/dashboard/admin/users";
 import AdminBilling from "@/pages/dashboard/admin/billing";
 import AdminSettings from "@/pages/dashboard/admin/settings";
 import AdminReportConfigs from "./pages/dashboard/admin/report-configs/report-configs";
-import AdminTools from "./pages/dashboard/admin/tools";
+// import AdminTools from "./pages/dashboard/admin/tools";
 import AdminActivity from "./pages/dashboard/admin/activity";
 import AdminDrafts from "./pages/dashboard/admin/drafts";
 import AdminExports from "./pages/dashboard/admin/exports";
 import AdminRoles from "./pages/dashboard/admin/roles";
 import AdminReportDataInputs from "./pages/dashboard/admin/report-configs/data-inputs";
+import AdminReportTemplates from "./pages/dashboard/admin/report-configs/admin-report-templates";
 
 export default function App() {
   return (<>
@@ -58,31 +59,38 @@ export default function App() {
       <Route element={<RequireAuth />}>
         
         {/* ===== ADMIN ===== */}
-        <Route element={<RequireAdmin />}>
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<AdminOverview />} />
+      <Route element={<RequireAdmin />}>
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<AdminOverview />} />
 
-            <Route path="tools" element={<AdminReportConfigs />} />
-            <Route path="report-configs" element={<AdminReportConfigs />} />
+          {/* TOOLS */}
+          <Route path="report-configs" element={<AdminReportConfigs />} />
 
-            <Route path="reports" element={<AdminReports />} />
-            <Route path="drafts" element={<AdminDrafts />} />
+          {/* TEMPLATES UNDER TOOL */}
+          <Route
+            path="report-configs/:toolId/templates"
+            element={<AdminReportTemplates />}
+          />
 
-            <Route path="users" element={<AdminUsers />} />
-            <Route path="roles" element={<AdminRoles />} />
+          {/* INPUT FIELDS UNDER TEMPLATE */}
+          <Route
+            path="report-configs/:templateId/data-inputs"
+            element={<AdminReportDataInputs />}
+          />
 
-            <Route path="exports" element={<AdminExports />} />
-            <Route path="activity" element={<AdminActivity />} />
+          <Route path="reports" element={<AdminReports />} />
+          <Route path="drafts" element={<AdminDrafts />} />
 
-            <Route path="billing" element={<AdminBilling />} />
-            <Route path="settings" element={<AdminSettings />} />
-          {/* Nested in AdminReportConfigs page*/}
-            <Route
-              path="report-configs/:reportId/data-inputs"
-              element={<AdminReportDataInputs />}
-            />
-          </Route>
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="roles" element={<AdminRoles />} />
+
+          <Route path="exports" element={<AdminExports />} />
+          <Route path="activity" element={<AdminActivity />} />
+
+          <Route path="billing" element={<AdminBilling />} />
+          <Route path="settings" element={<AdminSettings />} />
         </Route>
+      </Route>
 
         {/* ===== USER ===== */}
         <Route path="/dashboard" element={<DashboardLayout />}>
