@@ -1,5 +1,7 @@
 package com.paysecure.ai_report_tool_backend.dto;
 
+import com.paysecure.ai_report_tool_backend.model.ReportTemplate;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -18,6 +20,7 @@ public record ReportResponse(
         String depth,
         List<ChartData> charts,
         List<UploadedFileInfo> files
+//        ReportTemplate reportTemplate;
 ) {
     // Simple constructor for backward compatibility
     public ReportResponse(UUID id, String title, String status, String content, Instant created_at) {

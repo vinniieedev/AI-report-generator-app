@@ -15,10 +15,14 @@ const Login: React.FC = () => {
   const navigate = useNavigate()
 
   useEffect(() => {
-    if (!loading && user) {
+  if (!loading && user) {
+    if (user.role === "ADMIN") {
+      navigate("/admin", { replace: true })
+    } else {
       navigate("/dashboard", { replace: true })
     }
-  }, [user, loading, navigate])
+  }
+}, [user, loading, navigate])
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()

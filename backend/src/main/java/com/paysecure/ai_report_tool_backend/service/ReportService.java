@@ -80,6 +80,15 @@ public class ReportService {
         report.setUser(user);
         report.setStatus(ReportStatus.DRAFT);
         report.setContent("");
+        ReportTemplate template = templateRepository.save(
+                ReportTemplate.builder()
+                        .toolId(report.getToolId())
+                        .inputFields(List.of())
+                        .build()
+        );
+
+        report.setTemplate(template);
+//        report.setReportTemplate();
 
         // Link to template if exists
         templateRepository.findByToolId(req.tool_id())

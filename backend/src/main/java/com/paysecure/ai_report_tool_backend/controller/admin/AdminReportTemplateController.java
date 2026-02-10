@@ -2,6 +2,7 @@ package com.paysecure.ai_report_tool_backend.controller.admin;
 
 import com.paysecure.ai_report_tool_backend.dto.admin.*;
 import com.paysecure.ai_report_tool_backend.service.AdminReportTemplateService;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -56,7 +57,8 @@ public class AdminReportTemplateController {
     }
 
     @DeleteMapping("/input-fields/{fieldId}")
-    public void deleteField(@PathVariable UUID fieldId) {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteInputField(@PathVariable UUID fieldId) {
         service.deleteInputField(fieldId);
     }
 }

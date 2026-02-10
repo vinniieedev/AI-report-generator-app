@@ -4,6 +4,7 @@ import com.paysecure.ai_report_tool_backend.dto.ToolResponse;
 import com.paysecure.ai_report_tool_backend.dto.InputFieldResponse;
 import com.paysecure.ai_report_tool_backend.model.ReportTemplate;
 import com.paysecure.ai_report_tool_backend.repository.ReportTemplateRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -11,6 +12,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/tools")
 public class ToolController {
@@ -50,23 +52,31 @@ public class ToolController {
 
     @GetMapping
     public List<ToolResponse> getAllTools() {
+        System.out.println("Received tools request");
         // First check database for templates
-        List<ReportTemplate> templates = templateRepository.findAll();
-        
-        if (!templates.isEmpty()) {
+        try{
+            List<ReportTemplate> templates = templateRepository.findAll();
+            System.out.println(templates);
             return templates.stream()
                     .map(t -> new ToolResponse(
-                            t.getToolId(),
+                            t.getId().toString(),
                             t.getTitle(),
                             t.getDescription(),
                             t.getCategory(),
                             t.getIndustry()
                     ))
                     .collect(Collectors.toList());
+        }catch(Exception e){
+            log.info(e.toString());
+            throw new RuntimeException(e);
         }
         
-        // Fallback to static list
-        return new ArrayList<ToolResponse>();
+//        if (!templates.isEmpty()) {
+
+//        }
+//
+//        // Fallback to static list
+//        return new ArrayList<ToolResponse>();
     }
 
     @GetMapping("/{toolId}")

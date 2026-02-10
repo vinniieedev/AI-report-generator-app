@@ -1,22 +1,20 @@
-import { useContext } from "react"
 import { Navigate, Outlet } from "react-router-dom"
-import { AuthContext } from "@/auth/AuthContext"
+import { useAuth } from "@/hooks/auth/useAuth"
 
 export function RequireAdmin() {
-  const auth = useContext(AuthContext)
+  const { user, loading } = useAuth()
 
-  if (!auth) {
-    throw new Error("RequireAdmin must be used inside AuthProvider")
-  }
-
-  const { user, loading } = auth
-
-  // ⏳ wait until restore finishes
   if (loading) {
-    return null // or return a spinner
+    return <div>Loading...</div>
   }
 
-  if (!user || user.role !== "ADMIN") {
+  if (!user) {
+    return <Navigate to="/login" replace />
+  }
+
+  const role = user.role?.replace("ROLE_", "")
+
+  if (role !== "ADMIN") {
     return <Navigate to="/admin-access-denied" replace />
   }
 

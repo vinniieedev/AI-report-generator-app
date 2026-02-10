@@ -57,6 +57,22 @@ export default function App() {
 
       {/* ---------- Auth ---------- */}
       <Route element={<RequireAuth />}>
+      {/* ===== USER ===== */}
+        <Route path="/dashboard" element={<DashboardLayout />}>
+          <Route index element={<DashboardOverview />} />
+
+          <Route path="create-report">
+            <Route index element={<ToolSelection />} />
+            <Route path="wizard/:toolId" element={<CreateReport />} />
+          </Route>
+
+          <Route path="my-reports" element={<MyReports />} />
+          <Route path="reports/:reportId" element={<ReportViewer />} />
+          <Route path="drafts" element={<Drafts />} />
+          <Route path="exports" element={<Exports />} />
+          <Route path="billing" element={<Billing />} />
+          <Route path="profile" element={<Profile />} />
+        </Route>
         
         {/* ===== ADMIN ===== */}
       <Route element={<RequireAdmin />}>
@@ -92,22 +108,7 @@ export default function App() {
         </Route>
       </Route>
 
-        {/* ===== USER ===== */}
-        <Route path="/dashboard" element={<DashboardLayout />}>
-          <Route index element={<DashboardOverview />} />
-
-          <Route path="create-report">
-            <Route index element={<ToolSelection />} />
-            <Route path="wizard/:toolId" element={<CreateReport />} />
-          </Route>
-
-          <Route path="my-reports" element={<MyReports />} />
-          <Route path="reports/:reportId" element={<ReportViewer />} />
-          <Route path="drafts" element={<Drafts />} />
-          <Route path="exports" element={<Exports />} />
-          <Route path="billing" element={<Billing />} />
-          <Route path="profile" element={<Profile />} />
-        </Route>
+        
       </Route>
 
       {/* ---------- Fallback ---------- */}

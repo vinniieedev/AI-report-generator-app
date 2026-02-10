@@ -57,6 +57,7 @@ public class AdminReportTemplateService {
         template.addInputField(field);
 
         templateRepo.save(template);
+        fieldRepo.save(field);
         return toResponse(field);
     }
 

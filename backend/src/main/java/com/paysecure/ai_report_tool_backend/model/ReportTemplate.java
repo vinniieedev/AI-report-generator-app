@@ -1,6 +1,10 @@
 package com.paysecure.ai_report_tool_backend.model;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,6 +12,9 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "report_templates")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
 public class ReportTemplate {
 
     @Id
