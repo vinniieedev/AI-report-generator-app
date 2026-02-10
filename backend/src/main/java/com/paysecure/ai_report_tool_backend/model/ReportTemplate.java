@@ -1,10 +1,7 @@
 package com.paysecure.ai_report_tool_backend.model;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +12,8 @@ import java.util.UUID;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
+@Getter
+@Setter
 public class ReportTemplate {
 
     @Id
@@ -37,7 +36,7 @@ public class ReportTemplate {
             mappedBy = "template",
             cascade = CascadeType.ALL,
             orphanRemoval = true,
-            fetch = FetchType.LAZY
+            fetch = FetchType.EAGER
     )
     @OrderBy("sortOrder ASC")
     private List<InputField> inputFields = new ArrayList<>();
@@ -56,26 +55,5 @@ public class ReportTemplate {
         this.inputFields.remove(field);
     }
 
-    /* -------------------------
-       Getters / Setters
-    ------------------------- */
 
-    public UUID getId() { return id; }
-
-    public String getToolId() { return toolId; }
-    public void setToolId(String toolId) { this.toolId = toolId; }
-
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
-
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-
-    public String getCategory() { return category; }
-    public void setCategory(String category) { this.category = category; }
-
-    public String getIndustry() { return industry; }
-    public void setIndustry(String industry) { this.industry = industry; }
-
-    public List<InputField> getInputFields() { return inputFields; }
 }

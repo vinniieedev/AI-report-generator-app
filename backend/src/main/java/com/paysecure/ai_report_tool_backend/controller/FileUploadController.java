@@ -1,16 +1,25 @@
 package com.paysecure.ai_report_tool_backend.controller;
 
 import com.paysecure.ai_report_tool_backend.dto.file.FileUploadResponse;
+import com.paysecure.ai_report_tool_backend.exception.ApiException;
 import com.paysecure.ai_report_tool_backend.model.Report;
+import com.paysecure.ai_report_tool_backend.model.UploadedFile;
 import com.paysecure.ai_report_tool_backend.model.User;
 import com.paysecure.ai_report_tool_backend.repository.ReportRepository;
 import com.paysecure.ai_report_tool_backend.security.SecurityUtils;
 import com.paysecure.ai_report_tool_backend.service.FileParserService;
 import com.paysecure.ai_report_tool_backend.service.UserService;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
 
@@ -66,4 +75,32 @@ public class FileUploadController {
                 .map(file -> fileParserService.uploadAndParse(file, user, finalReport))
                 .toList();
     }
+
+    @GetMapping("/{fileId}/download")
+    public ResponseEntity<Resource> downloadFile(@PathVariable UUID fileId) {
+        UUID userId = SecurityUtils.getCurrentUserId();
+
+        UploadedFile file = fileParserService.getFileForDownload(fileId, userId);
+
+        try {
+            Path path = Paths.get(file.getStoragePath());
+            Resource resource = new UrlResource(path.toUri());
+
+            if (!resource.exists()) {
+                throw new ApiException("File not found on disk", HttpStatus.NOT_FOUND);
+            }
+
+            return ResponseEntity.ok()
+                    .header(
+                            HttpHeaders.CONTENT_DISPOSITION,
+                            "inline; filename=\"" + file.getOriginalFilename() + "\""
+                    )
+                    .header(HttpHeaders.CONTENT_TYPE, file.getContentType())
+                    .body(resource);
+
+        } catch (Exception e) {
+            throw new ApiException("Error downloading file", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
 }

@@ -53,11 +53,15 @@ public class AdminReportTemplateService {
                 .orElseThrow();
 
         InputField field = new InputField();
-        apply(field, req);
-        template.addInputField(field);
+        try{
+            apply(field, req);
+            template.addInputField(field);
 
-        templateRepo.save(template);
-        fieldRepo.save(field);
+            templateRepo.save(template);
+        }catch (Exception e){
+            System.out.println(e.getMessage());
+            throw new RuntimeException(e);
+        }
         return toResponse(field);
     }
 
@@ -73,7 +77,14 @@ public class AdminReportTemplateService {
     }
 
     public void deleteInputField(UUID fieldId) {
-        fieldRepo.deleteById(fieldId);
+        InputField field = fieldRepo.findById(fieldId)
+                .orElseThrow();
+
+        ReportTemplate template = field.getTemplate();
+
+        template.removeInputField(field);
+
+        templateRepo.save(template);
     }
 
     /* -------------------------

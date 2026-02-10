@@ -7,5 +7,6 @@ public enum InputFieldType {
     NUMBER,
     SELECT,
     FILE,
-    DATE
+    DATE,
+    BOOLEAN
 }

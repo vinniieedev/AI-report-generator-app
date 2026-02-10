@@ -48,6 +48,18 @@ public class FileParserService {
 
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
+    public UploadedFile getFileForDownload(UUID fileId, UUID userId) {
+        UploadedFile file = uploadedFileRepository.findById(fileId)
+                .orElseThrow(() -> new ApiException("File not found", HttpStatus.NOT_FOUND));
+
+        //  Ownership validation
+        if (!file.getUser().getId().equals(userId)) {
+            throw new ApiException("Unauthorized access to file", HttpStatus.FORBIDDEN);
+        }
+
+        return file;
+    }
+
     public FileParserService(UploadedFileRepository uploadedFileRepository) {
         this.uploadedFileRepository = uploadedFileRepository;
         this.gson = new Gson();

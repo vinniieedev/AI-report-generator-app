@@ -88,6 +88,7 @@ export default function AdminReportConfigs() {
         description: t.description,
         category: t.category,
         industry: t.industry,
+        inputFields: t.inputFields || [], // Ensure inputFields is always an array
       }));
 
       setReports(mapped);

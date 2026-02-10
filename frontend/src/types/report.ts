@@ -1,3 +1,6 @@
+import type { InputFieldResponse } from "./report-template"
+import type { InputField } from "./tool"
+
 export type AppReport = {
   id: string
 
@@ -26,6 +29,7 @@ export type Tool = {
   description: string;
   category: string;
   industry?: string;
+  inputFields: InputField[];
 };
 
 export type CreateReportPayload = {

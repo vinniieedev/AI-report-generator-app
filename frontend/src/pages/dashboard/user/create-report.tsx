@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import type { Tool } from "@/types/report";
 import type { FileUploadResponse } from "@/types/files";
 import { filesApi, reportsApi, toolsApi } from "@/services";
+import { API_BASE } from "@/services/client";
 
 /* ---------------------------------- */
 /* Types */
@@ -86,12 +87,115 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({
   </div>
 );
 
+
+type InputField = {
+  id: string
+  label: string
+  description?: string
+  type: string
+  required: boolean
+  minValue?: number
+  maxValue?: number
+  options?: string[]
+}
+
+const renderDynamicInput = (
+  field: InputField,
+  value: string,
+  onChange: (val: string) => void
+) => {
+  const baseClass =
+    "w-full px-4 py-3 rounded-lg border font-sans text-sm"
+
+  switch (field.type) {
+    case "TEXT":
+      return (
+        <input
+          type="text"
+          value={value}
+          required={field.required}
+          onChange={(e) => onChange(e.target.value)}
+          className={baseClass}
+        />
+      )
+
+    case "NUMBER":
+      return (
+        <input
+          type="number"
+          value={value}
+          min={field.minValue ?? undefined}
+          max={field.maxValue ?? undefined}
+          required={field.required}
+          onChange={(e) => onChange(e.target.value)}
+          className={baseClass}
+        />
+      )
+
+    case "TEXTAREA":
+      return (
+        <textarea
+          value={value}
+          required={field.required}
+          onChange={(e) => onChange(e.target.value)}
+          className={`${baseClass} h-32 resize-none`}
+        />
+      )
+
+    case "SELECT":
+      return (
+        <select
+          value={value}
+          required={field.required}
+          onChange={(e) => onChange(e.target.value)}
+          className={baseClass}
+        >
+          <option value="">Select</option>
+          {field.options?.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </select>
+      )
+
+    case "DATE":
+      return (
+        <input
+          type="date"
+          value={value}
+          required={field.required}
+          onChange={(e) => onChange(e.target.value)}
+          className={baseClass}
+        />
+      )
+
+    case "BOOLEAN":
+      return (
+        <select
+          value={value}
+          required={field.required}
+          onChange={(e) => onChange(e.target.value)}
+          className={baseClass}
+        >
+          <option value="">Select</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+      )
+
+    default:
+      return null
+  }
+}
+
 /* ---------------------------------- */
 /* Main Component */
 /* ---------------------------------- */
 
 const CreateReport: React.FC = () => {
   const navigate = useNavigate();
+  const [previewFile, setPreviewFile] = useState<FileUploadResponse | null>(null)
   const { toolId } = useParams<{ toolId: string }>();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -120,6 +224,7 @@ const CreateReport: React.FC = () => {
       try {
         const fetchedTool = await toolsApi.getById(id);
         setTool(fetchedTool);
+        console.log("Fetched tool:", fetchedTool);
         if (fetchedTool.industry) {
           setFormData(prev => ({ ...prev, industry: fetchedTool.industry || "" }));
         }
@@ -393,6 +498,41 @@ const CreateReport: React.FC = () => {
                     Upload files or add notes for your {tool?.title} report
                   </p>
                 </div>
+                {/* Dynamic Inputs from Admin */}
+                {tool.inputFields?.length > 0 && (
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-semibold text-muted-foreground">
+                      Required Inputs
+                    </h3>
+
+                    {tool.inputFields
+                      .sort((a, b) => a.sortOrder - b.sortOrder)
+                      .map((field) => (
+                        <div key={field.id} className="space-y-1">
+                          <label className="text-sm font-medium">
+                            {field.label}
+                            {field.required && <span className="text-red-500"> *</span>}
+                          </label>
+
+                          {renderDynamicInput(
+                            field,
+                            formData.inputs[field.id] ?? "",
+                            (value) =>
+                              update("inputs", {
+                                ...formData.inputs,
+                                [field.id]: value,
+                              })
+                          )}
+
+                          {field.description && (
+                            <p className="text-xs text-muted-foreground">
+                              {field.description}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                  </div>
+                )}
 
                 {/* File Upload Area */}
                 <div className="space-y-4">
@@ -546,6 +686,90 @@ const CreateReport: React.FC = () => {
                     ⚡ This will use 1 credit to generate your report
                   </p>
                 </div>
+
+                {/* Dynamic Inputs Review */}
+                  {tool.inputFields?.length > 0 && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold">
+                        Provided Inputs
+                      </h3>
+
+                      <div className="bg-white rounded-lg border p-4 space-y-3">
+                        {tool.inputFields
+                          .sort((a, b) => a.sortOrder - b.sortOrder)
+                          .map((field) => {
+                            const value = formData.inputs[field.id]
+
+                            if (!value) return null
+
+                            let displayValue = value
+
+                            if (field.type === "BOOLEAN") {
+                              displayValue = value === "true" ? "Yes" : "No"
+                            }
+
+                            return (
+                              <div key={field.id}>
+                                <p className="text-sm text-muted-foreground">
+                                  {field.label}
+                                </p>
+                                <p className="font-medium">
+                                  {displayValue}
+                                </p>
+                              </div>
+                            )
+                          })}
+                      </div>
+                    </div>
+                  )}
+                  {/* Uploaded Files Review */}
+                  {formData.uploadedFiles.length > 0 && (
+                    <div className="space-y-3">
+                      <h3 className="text-lg font-semibold">
+                        Uploaded Files
+                      </h3>
+
+                      <div className="bg-white rounded-lg border p-4 space-y-2">
+                        {formData.uploadedFiles.map((file) => (
+                        <div
+                          key={file.id}
+                          className="flex items-center justify-between"
+                        >
+                          <div className="flex items-center gap-3">
+                            <FileText className="h-4 w-4 text-primary" />
+                            <span className="text-sm font-medium">
+                              {file.filename}
+                            </span>
+                          </div>
+
+                          {file.filename.toLowerCase().endsWith(".pdf") && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setPreviewFile(file)}
+                            >
+                              View PDF
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      </div>
+                    </div>
+                  )}
+                  {/* Notes Review */}
+                  {formData.wizardData.notes && (
+                    <div className="space-y-3">
+                      <h3 className="text-lg font-semibold">
+                        Additional Notes
+                      </h3>
+
+                      <div className="bg-white rounded-lg border p-4">
+                        <p className="text-sm whitespace-pre-wrap">
+                          {formData.wizardData.notes}
+                        </p>
+                      </div>
+                    </div>
+                  )}
               </motion.div>
             )}
           </motion.div>
@@ -588,6 +812,42 @@ const CreateReport: React.FC = () => {
           </Button>
         </div>
       </div>
+      <AnimatePresence>
+      {previewFile && (
+        <motion.div
+          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <motion.div
+            initial={{ scale: 0.95 }}
+            animate={{ scale: 1 }}
+            exit={{ scale: 0.95 }}
+            className="bg-white w-[90%] h-[90%] rounded-xl p-4 flex flex-col"
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-semibold text-lg">
+                {previewFile.filename}
+              </h3>
+
+              <Button
+                variant="ghost"
+                onClick={() => setPreviewFile(null)}
+              >
+                Close
+              </Button>
+            </div>
+
+            <iframe
+              src={`${API_BASE}/files/${previewFile.id}/download`}
+              className="flex-1 rounded-md border"
+              title="PDF Preview"
+            />
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
     </div>
   );
 };
