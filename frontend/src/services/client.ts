@@ -1,25 +1,25 @@
-import { getToken } from "@/lib/utils"
-
+import { getToken } from "@/lib/utils";
+import { toast } from "react-toastify";
 export const API_BASE =
-  import.meta.env.VITE_API_BASE || "http://localhost:8080/api"
+  import.meta.env.VITE_API_BASE || "http://localhost:8080/api";
 
 export class ApiError extends Error {
-  status: number
-  raw?: unknown
+  status: number;
+  raw?: unknown;
 
   constructor(status: number, message: string, raw?: unknown) {
-    super(message)
-    this.status = status
-    this.raw = raw
+    super(message);
+    this.status = status;
+    this.raw = raw;
   }
 }
 
 export async function apiClient<T>(
   path: string,
   options: RequestInit = {},
-  responseType: "json" | "blob" = "json"
+  responseType: "json" | "blob" = "json",
 ): Promise<T> {
-  const token = getToken()
+  const token = getToken();
 
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
@@ -30,32 +30,37 @@ export async function apiClient<T>(
       ...(token && { Authorization: `Bearer ${token}` }),
       ...(options.headers || {}),
     },
-  })
+  });
 
   if (!res.ok) {
-    let errorBody: any = null
+    let errorBody: any = null;
 
     try {
-      errorBody = await res.json()
+      errorBody = await res.json();
     } catch {}
+    console.log("API Error Body:", errorBody);
+    const message =
+      errorBody?.message || errorBody?.error || "Something went wrong";
 
-    throw new ApiError(
-      res.status,
-      errorBody?.message ||
-        errorBody?.error ||
-        "Something went wrong",
-      errorBody
-    )
+    toast.error(message);
+
+    throw new ApiError(res.status, message, errorBody);
   }
 
   // 204 No Content
   if (res.status === 204) {
-    return {} as T
+    return undefined as T;
   }
 
   if (responseType === "blob") {
-    return (await res.blob()) as T
+    return (await res.blob()) as T;
   }
 
-  return res.json()
+  const text = await res.text();
+
+  if (!text) {
+    return undefined as T;
+  }
+
+  return JSON.parse(text) as T;
 }

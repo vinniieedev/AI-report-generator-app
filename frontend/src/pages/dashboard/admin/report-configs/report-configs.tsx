@@ -4,13 +4,9 @@ import { Search, Plus, FileText } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-// import { MOCK_TOOLS } from "@/config/create-report.config";
 import { useNavigate } from "react-router-dom";
-// import { adminReportTemplatesApi } from "@/services/adminReportTemplates.api";
-// import type { ReportTemplateResponse } from "@/types/report-template";
 import { toolsApi } from "@/services";
 import type { Tool } from "@/types/report";
-
 
 /* ----------------------------------
    Types
@@ -21,14 +17,20 @@ type ReportConfig = {
   title: string;
   description: string;
   category: string;
-  industry?: string; // ← optional
+  industry?: string;
 };
 
 /* ----------------------------------
    Card
 ----------------------------------- */
 
-function ReportConfigCard({ report, onClick }: { report: ReportConfig, onClick: () => void }) {
+function ReportConfigCard({
+  report,
+  onClick,
+}: {
+  report: ReportConfig;
+  onClick: () => void;
+}) {
   return (
     <motion.div
       whileHover={{ y: -6, scale: 1.02 }}
@@ -45,9 +47,7 @@ function ReportConfigCard({ report, onClick }: { report: ReportConfig, onClick: 
             </span>
           </div>
 
-          <h3 className="text-lg font-semibold mb-1">
-            {report.title}
-          </h3>
+          <h3 className="text-lg font-semibold mb-1">{report.title}</h3>
 
           <p className="text-sm text-muted-foreground line-clamp-2">
             {report.description}
@@ -78,28 +78,28 @@ export default function AdminReportConfigs() {
   ----------------------------------- */
 
   useEffect(() => {
-  async function fetchTemplates() {
-    try {
-      const data = await toolsApi.getAll();
+    async function fetchTemplates() {
+      try {
+        const data = await toolsApi.getAll();
 
-      const mapped: Tool[] = data.map((t: Tool) => ({
-        id: t.id,
-        title: t.title,
-        description: t.description,
-        category: t.category,
-        industry: t.industry,
-        inputFields: t.inputFields || [], // Ensure inputFields is always an array
-      }));
-
-      setReports(mapped);
-      setFilteredReports(mapped);
-    } catch (error) {
-      console.error("Failed to fetch templates", error);
+        const mapped: Tool[] = data.map((t: Tool) => ({
+          id: t.id,
+          title: t.title,
+          description: t.description,
+          category: t.category,
+          industry: t.industry,
+          inputFields: t.inputFields || [], // Ensure inputFields is always an array
+        }));
+        console.log("Fetched tools:", mapped);
+        setReports(mapped);
+        setFilteredReports(mapped);
+      } catch (error) {
+        console.error("Failed to fetch templates", error);
+      }
     }
-  }
 
-  fetchTemplates();
-}, []);
+    fetchTemplates();
+  }, []);
 
   useEffect(() => {
     filterReports();
@@ -113,9 +113,7 @@ export default function AdminReportConfigs() {
     let filtered = [...reports];
 
     if (selectedCategory !== "All") {
-      filtered = filtered.filter(
-        (r) => r.category === selectedCategory
-      );
+      filtered = filtered.filter((r) => r.category === selectedCategory);
     }
 
     if (searchQuery) {
@@ -123,7 +121,7 @@ export default function AdminReportConfigs() {
       filtered = filtered.filter(
         (r) =>
           r.title.toLowerCase().includes(q) ||
-          r.description.toLowerCase().includes(q)
+          r.description.toLowerCase().includes(q),
       );
     }
 
@@ -139,13 +137,14 @@ export default function AdminReportConfigs() {
      Group by Category (after filter)
   ----------------------------------- */
 
-  const groupedReports = filteredReports.reduce<
-    Record<string, ReportConfig[]>
-  >((acc, report) => {
-    acc[report.category] = acc[report.category] || [];
-    acc[report.category].push(report);
-    return acc;
-  }, {});
+  const groupedReports = filteredReports.reduce<Record<string, ReportConfig[]>>(
+    (acc, report) => {
+      acc[report.category] = acc[report.category] || [];
+      acc[report.category].push(report);
+      return acc;
+    },
+    {},
+  );
 
   /* ----------------------------------
      UI
@@ -162,9 +161,9 @@ export default function AdminReportConfigs() {
           </p>
         </div>
 
-        <Button>
+        <Button onClick={() => navigate("/admin/report-configs/new")}>
           <Plus size={16} className="mr-2" />
-          Create Report
+          Create Report Template
         </Button>
       </div>
 
@@ -210,7 +209,7 @@ export default function AdminReportConfigs() {
                     key={report.id}
                     report={report}
                     onClick={() =>
-                      navigate(`/admin/report-configs/${report.id}/data-inputs`)
+                      navigate(`/admin/report-configs/${report.id}`)
                     }
                   />
                 ))}

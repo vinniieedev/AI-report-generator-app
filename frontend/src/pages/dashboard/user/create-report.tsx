@@ -17,6 +17,7 @@ import type { Tool } from "@/types/report";
 import type { FileUploadResponse } from "@/types/files";
 import { filesApi, reportsApi, toolsApi } from "@/services";
 import { API_BASE } from "@/services/client";
+import { getToken } from "@/lib/utils";
 
 /* ---------------------------------- */
 /* Types */
@@ -196,6 +197,7 @@ const renderDynamicInput = (
 const CreateReport: React.FC = () => {
   const navigate = useNavigate();
   const [previewFile, setPreviewFile] = useState<FileUploadResponse | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const { toolId } = useParams<{ toolId: string }>();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -216,6 +218,22 @@ const CreateReport: React.FC = () => {
     inputs: {},
     uploadedFiles: [],
   });
+
+  async function getSignedUrl(fileId: string) {
+  const res = await fetch(`${API_BASE}/files/${fileId}/signed-url`, {
+    headers: {
+      Authorization: `Bearer ${getToken()}`,
+    },
+  })
+
+  if (!res.ok) {
+    throw new Error("Failed to get signed URL")
+  }
+
+  const data = await res.json()
+  return data.url as string
+}
+
 
   useEffect(() => {
     if (!toolId) return;
@@ -746,7 +764,15 @@ const CreateReport: React.FC = () => {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => setPreviewFile(file)}
+                              onClick={async () => {
+                                try {
+                                  const url = await getSignedUrl(file.id)
+                                  setPreviewFile(file)
+                                  setPreviewUrl(url)
+                                } catch (e) {
+                                  toast.error("Unable to preview file")
+                                }
+                              }}
                             >
                               View PDF
                             </Button>
@@ -813,7 +839,7 @@ const CreateReport: React.FC = () => {
         </div>
       </div>
       <AnimatePresence>
-      {previewFile && (
+      {previewFile && previewUrl && (
         <motion.div
           className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
           initial={{ opacity: 0 }}
@@ -833,14 +859,17 @@ const CreateReport: React.FC = () => {
 
               <Button
                 variant="ghost"
-                onClick={() => setPreviewFile(null)}
+                onClick={() => {
+                  setPreviewFile(null)
+                  setPreviewUrl(null)
+                }}
               >
                 Close
               </Button>
             </div>
 
             <iframe
-              src={`${API_BASE}/files/${previewFile.id}/download`}
+              src={previewUrl}
               className="flex-1 rounded-md border"
               title="PDF Preview"
             />

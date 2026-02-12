@@ -10,5 +10,12 @@ public record ReportTemplateResponse(
         String description,
         String category,
         String industry,
+        String systemPrompt,
+        String calculationPrompt,
+        String outputFormatPrompt,
+        Double temperature,
+        Integer maxTokens,
+        Boolean active,
+
         List<InputFieldResponse> inputFields
 ) {}
