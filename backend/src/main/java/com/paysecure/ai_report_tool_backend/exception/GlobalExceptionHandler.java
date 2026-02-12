@@ -20,6 +20,7 @@ public class GlobalExceptionHandler {
             ApiException ex,
             HttpServletRequest request
     ) {
+        ex.printStackTrace();
         return buildErrorResponse(
                 ex.getStatus(),
                 ex.getMessage(),
@@ -33,6 +34,7 @@ public class GlobalExceptionHandler {
             IllegalArgumentException ex,
             HttpServletRequest request
     ) {
+        ex.printStackTrace();
         return buildErrorResponse(
                 HttpStatus.BAD_REQUEST,
                 ex.getMessage(),
@@ -46,6 +48,7 @@ public class GlobalExceptionHandler {
             Exception ex,
             HttpServletRequest request
     ) {
+        ex.printStackTrace();
         return buildErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "Something went wrong",

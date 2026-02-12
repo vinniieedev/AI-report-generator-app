@@ -2,10 +2,7 @@ package com.paysecure.ai_report_tool_backend.model;
 
 import com.paysecure.ai_report_tool_backend.model.enums.InputFieldType;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.List;
 import java.util.UUID;
@@ -16,6 +13,7 @@ import java.util.UUID;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class InputField {
 
     @Id

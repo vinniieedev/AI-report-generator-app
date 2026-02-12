@@ -7,6 +7,7 @@ import com.paysecure.ai_report_tool_backend.model.ReportTemplate;
 import com.paysecure.ai_report_tool_backend.repository.InputFieldRepository;
 import com.paysecure.ai_report_tool_backend.repository.ReportRepository;
 import com.paysecure.ai_report_tool_backend.repository.ReportTemplateRepository;
+import org.springframework.transaction.annotation.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -53,13 +54,16 @@ public class AdminReportTemplateController {
     /* =====================================================
        CREATE TEMPLATE
     ===================================================== */
-
+    @Transactional
     @PostMapping
     public ReportTemplateResponse create(
             @Valid @RequestBody ReportTemplateRequest request
     ) {
 
-        String normalizedToolId = request.toolId().trim().toLowerCase();
+        String normalizedToolId = request.toolId()
+                .trim()
+                .toLowerCase()
+                .replaceAll("\\s+", "-");
 
         if (templateRepository.existsByToolId(normalizedToolId)) {
             throw new ApiException("ToolId already exists", HttpStatus.BAD_REQUEST);
@@ -74,9 +78,37 @@ public class AdminReportTemplateController {
                 .systemPrompt(request.systemPrompt())
                 .calculationPrompt(request.calculationPrompt())
                 .outputFormatPrompt(request.outputFormatPrompt())
+                .temperature(
+                        request.temperature() != null ? request.temperature() : 0.7
+                )
+                .maxTokens(
+                        request.maxTokens() != null ? request.maxTokens() : 2000
+                )
+                .active(
+                        request.active() != null ? request.active() : true
+                )
                 .build();
 
-        return mapToResponse(templateRepository.save(template));
+        if (request.inputFields() != null) {
+            for (InputFieldRequest fieldRequest : request.inputFields()) {
+                InputField field = InputField.builder()
+                        .label(fieldRequest.label())
+                        .type(fieldRequest.type())
+                        .required(fieldRequest.required())
+                        .minValue(fieldRequest.minValue())
+                        .maxValue(fieldRequest.maxValue())
+                        .options(fieldRequest.options())
+                        .sortOrder(fieldRequest.sortOrder())
+                        .template(template)
+                        .build();
+
+                template.getInputFields().add(field);
+            }
+        }
+
+        ReportTemplate saved = templateRepository.save(template);
+
+        return mapToResponse(saved);
     }
 
     /* =====================================================
@@ -206,7 +238,6 @@ public class AdminReportTemplateController {
             throw new ApiException("Template not found", HttpStatus.NOT_FOUND);
         }
 
-        // 🔥 THIS IS IMPORTANT
         template.removeInputField(field);
 
         templateRepository.save(template);
@@ -230,10 +261,12 @@ public class AdminReportTemplateController {
                 template.getTemperature(),
                 template.getMaxTokens(),
                 template.getActive(),
-                template.getInputFields()
+                template.getInputFields() != null
+                        ? template.getInputFields()
                         .stream()
                         .map(this::mapToFieldResponse)
                         .collect(Collectors.toList())
+                        : List.of()
         );
     }
 
