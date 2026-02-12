@@ -71,6 +71,7 @@ export default function AdminReportConfigs() {
   const [filteredReports, setFilteredReports] = useState<ReportConfig[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(true);
   const navigate = useNavigate();
 
   /* ----------------------------------
@@ -80,6 +81,8 @@ export default function AdminReportConfigs() {
   useEffect(() => {
     async function fetchTemplates() {
       try {
+        setLoading(true);
+
         const data = await toolsApi.getAll();
 
         const mapped: Tool[] = data.map((t: Tool) => ({
@@ -88,13 +91,15 @@ export default function AdminReportConfigs() {
           description: t.description,
           category: t.category,
           industry: t.industry,
-          inputFields: t.inputFields || [], // Ensure inputFields is always an array
+          inputFields: t.inputFields || [],
         }));
-        console.log("Fetched tools:", mapped);
+
         setReports(mapped);
         setFilteredReports(mapped);
       } catch (error) {
         console.error("Failed to fetch templates", error);
+      } finally {
+        setLoading(false);
       }
     }
 
@@ -106,7 +111,7 @@ export default function AdminReportConfigs() {
   }, [reports, selectedCategory, searchQuery]);
 
   /* ----------------------------------
-     Filtering (same as ToolSelection)
+     Filtering
   ----------------------------------- */
 
   const filterReports = (): void => {
@@ -132,10 +137,6 @@ export default function AdminReportConfigs() {
     "All",
     ...Array.from(new Set(reports.map((r) => r.category))),
   ];
-
-  /* ----------------------------------
-     Group by Category (after filter)
-  ----------------------------------- */
 
   const groupedReports = filteredReports.reduce<Record<string, ReportConfig[]>>(
     (acc, report) => {
@@ -194,7 +195,11 @@ export default function AdminReportConfigs() {
 
       {/* Groups */}
       <AnimatePresence mode="wait">
-        {filteredReports.length === 0 ? (
+        {loading ? (
+          <p className="text-center text-muted-foreground mt-12">
+            Loading templates...
+          </p>
+        ) : filteredReports.length === 0 ? (
           <p className="text-center text-muted-foreground mt-12">
             No reports found
           </p>
