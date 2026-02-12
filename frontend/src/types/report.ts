@@ -1,4 +1,3 @@
-import type { InputFieldResponse } from "./report-template";
 import type { InputField } from "./tool";
 
 export type AppReport = {

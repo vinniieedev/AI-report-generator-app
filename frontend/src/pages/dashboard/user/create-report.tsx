@@ -1,7 +1,15 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, ChevronLeft, ChevronRight, Loader2, Upload, X, FileText } from "lucide-react";
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Upload,
+  X,
+  FileText,
+} from "lucide-react";
 import { toast } from "react-toastify";
 
 import {
@@ -88,25 +96,23 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({
   </div>
 );
 
-
 type InputField = {
-  id: string
-  label: string
-  description?: string
-  type: string
-  required: boolean
-  minValue?: number
-  maxValue?: number
-  options?: string[]
-}
+  id: string;
+  label: string;
+  description?: string;
+  type: string;
+  required: boolean;
+  minValue?: number;
+  maxValue?: number;
+  options?: string[];
+};
 
 const renderDynamicInput = (
   field: InputField,
   value: string,
-  onChange: (val: string) => void
+  onChange: (val: string) => void,
 ) => {
-  const baseClass =
-    "w-full px-4 py-3 rounded-lg border font-sans text-sm"
+  const baseClass = "w-full px-4 py-3 rounded-lg border font-sans text-sm";
 
   switch (field.type) {
     case "TEXT":
@@ -118,7 +124,7 @@ const renderDynamicInput = (
           onChange={(e) => onChange(e.target.value)}
           className={baseClass}
         />
-      )
+      );
 
     case "NUMBER":
       return (
@@ -131,7 +137,7 @@ const renderDynamicInput = (
           onChange={(e) => onChange(e.target.value)}
           className={baseClass}
         />
-      )
+      );
 
     case "TEXTAREA":
       return (
@@ -141,7 +147,7 @@ const renderDynamicInput = (
           onChange={(e) => onChange(e.target.value)}
           className={`${baseClass} h-32 resize-none`}
         />
-      )
+      );
 
     case "SELECT":
       return (
@@ -158,7 +164,7 @@ const renderDynamicInput = (
             </option>
           ))}
         </select>
-      )
+      );
 
     case "DATE":
       return (
@@ -169,7 +175,7 @@ const renderDynamicInput = (
           onChange={(e) => onChange(e.target.value)}
           className={baseClass}
         />
-      )
+      );
 
     case "BOOLEAN":
       return (
@@ -183,12 +189,12 @@ const renderDynamicInput = (
           <option value="true">Yes</option>
           <option value="false">No</option>
         </select>
-      )
+      );
 
     default:
-      return null
+      return null;
   }
-}
+};
 
 /* ---------------------------------- */
 /* Main Component */
@@ -196,8 +202,10 @@ const renderDynamicInput = (
 
 const CreateReport: React.FC = () => {
   const navigate = useNavigate();
-  const [previewFile, setPreviewFile] = useState<FileUploadResponse | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [previewFile, setPreviewFile] = useState<FileUploadResponse | null>(
+    null,
+  );
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const { toolId } = useParams<{ toolId: string }>();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -220,20 +228,19 @@ const CreateReport: React.FC = () => {
   });
 
   async function getSignedUrl(fileId: string) {
-  const res = await fetch(`${API_BASE}/files/${fileId}/signed-url`, {
-    headers: {
-      Authorization: `Bearer ${getToken()}`,
-    },
-  })
+    const res = await fetch(`${API_BASE}/files/${fileId}/signed-url`, {
+      headers: {
+        Authorization: `Bearer ${getToken()}`,
+      },
+    });
 
-  if (!res.ok) {
-    throw new Error("Failed to get signed URL")
+    if (!res.ok) {
+      throw new Error("Failed to get signed URL");
+    }
+
+    const data = await res.json();
+    return data.url as string;
   }
-
-  const data = await res.json()
-  return data.url as string
-}
-
 
   useEffect(() => {
     if (!toolId) return;
@@ -244,7 +251,10 @@ const CreateReport: React.FC = () => {
         setTool(fetchedTool);
         console.log("Fetched tool:", fetchedTool);
         if (fetchedTool.industry) {
-          setFormData(prev => ({ ...prev, industry: fetchedTool.industry || "" }));
+          setFormData((prev) => ({
+            ...prev,
+            industry: fetchedTool.industry || "",
+          }));
         }
       } catch (err) {
         console.error(err);
@@ -260,7 +270,7 @@ const CreateReport: React.FC = () => {
 
   const update = <K extends keyof FormDataState>(
     key: K,
-    value: FormDataState[K]
+    value: FormDataState[K],
   ) => setFormData((prev) => ({ ...prev, [key]: value }));
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -270,7 +280,7 @@ const CreateReport: React.FC = () => {
     setUploading(true);
     try {
       const uploaded = await Promise.all(
-        Array.from(files).map((file) => filesApi.upload(file))
+        Array.from(files).map((file) => filesApi.upload(file)),
       );
       setFormData((prev) => ({
         ...prev,
@@ -294,22 +304,22 @@ const CreateReport: React.FC = () => {
     }));
   };
 
-  const canProceed = (): boolean => {
-    switch (currentStep) {
-      case 0:
-        return Boolean(formData.industry);
-      case 1:
-        return Boolean(formData.reportType);
-      case 2:
-        return Boolean(formData.audience && formData.purpose);
-      case 3:
-        return Boolean(formData.tone && formData.depth);
-      case 4:
-        return true;
-      default:
-        return false;
-    }
-  };
+  // const canProceed = (): boolean => {
+  //   switch (currentStep) {
+  //     case 0:
+  //       return Boolean(formData.industry);
+  //     case 1:
+  //       return Boolean(formData.reportType);
+  //     case 2:
+  //       return Boolean(formData.audience && formData.purpose);
+  //     case 3:
+  //       return Boolean(formData.tone && formData.depth);
+  //     case 4:
+  //       return true;
+  //     default:
+  //       return false;
+  //   }
+  // };
 
   const handleGenerate = async () => {
     if (!tool) return;
@@ -335,7 +345,7 @@ const CreateReport: React.FC = () => {
 
       // Generate the report with AI
       await reportsApi.generate(report.id);
-      
+
       toast.success("Report generated successfully!");
       navigate(`/dashboard/my-reports`, { replace: true });
     } catch (err: any) {
@@ -436,9 +446,7 @@ const CreateReport: React.FC = () => {
                     <Button
                       key={a}
                       onClick={() => update("audience", a)}
-                      variant={
-                        formData.audience === a ? "selected" : "outline"
-                      }
+                      variant={formData.audience === a ? "selected" : "outline"}
                       className="p-3"
                     >
                       {a}
@@ -454,9 +462,7 @@ const CreateReport: React.FC = () => {
                     <Button
                       key={p}
                       onClick={() => update("purpose", p)}
-                      variant={
-                        formData.purpose === p ? "selected" : "outline"
-                      }
+                      variant={formData.purpose === p ? "selected" : "outline"}
                       className="p-3"
                     >
                       {p}
@@ -517,7 +523,7 @@ const CreateReport: React.FC = () => {
                   </p>
                 </div>
                 {/* Dynamic Inputs from Admin */}
-                {tool.inputFields?.length > 0 && (
+                {tool.inputFields && tool.inputFields?.length > 0 && (
                   <div className="space-y-4">
                     <h3 className="text-sm font-semibold text-muted-foreground">
                       Required Inputs
@@ -529,7 +535,9 @@ const CreateReport: React.FC = () => {
                         <div key={field.id} className="space-y-1">
                           <label className="text-sm font-medium">
                             {field.label}
-                            {field.required && <span className="text-red-500"> *</span>}
+                            {field.required && (
+                              <span className="text-red-500"> *</span>
+                            )}
                           </label>
 
                           {renderDynamicInput(
@@ -539,7 +547,7 @@ const CreateReport: React.FC = () => {
                               update("inputs", {
                                 ...formData.inputs,
                                 [field.id]: value,
-                              })
+                              }),
                           )}
 
                           {field.description && (
@@ -558,7 +566,8 @@ const CreateReport: React.FC = () => {
                     Upload Data Files
                   </h3>
                   <p className="text-xs text-muted-foreground">
-                    Supported formats: PDF, Excel (.xlsx, .xls), Word (.docx), CSV, JSON, TXT
+                    Supported formats: PDF, Excel (.xlsx, .xls), Word (.docx),
+                    CSV, JSON, TXT
                   </p>
 
                   <div
@@ -568,13 +577,19 @@ const CreateReport: React.FC = () => {
                     {uploading ? (
                       <div className="flex flex-col items-center gap-2">
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        <span className="text-sm text-muted-foreground">Uploading...</span>
+                        <span className="text-sm text-muted-foreground">
+                          Uploading...
+                        </span>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-2">
                         <Upload className="h-8 w-8 text-muted-foreground" />
-                        <span className="font-medium">Click to upload files</span>
-                        <span className="text-xs text-muted-foreground">or drag and drop</span>
+                        <span className="font-medium">
+                          Click to upload files
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          or drag and drop
+                        </span>
                       </div>
                     )}
                   </div>
@@ -600,9 +615,12 @@ const CreateReport: React.FC = () => {
                           <div className="flex items-center gap-3">
                             <FileText className="h-5 w-5 text-primary" />
                             <div>
-                              <p className="font-medium text-sm">{file.filename}</p>
+                              <p className="font-medium text-sm">
+                                {file.filename}
+                              </p>
                               <p className="text-xs text-muted-foreground">
-                                {file.dataSummary} • {Math.round(file.fileSize / 1024)}KB
+                                {file.dataSummary} •{" "}
+                                {Math.round(file.fileSize / 1024)}KB
                               </p>
                             </div>
                           </div>
@@ -667,7 +685,9 @@ const CreateReport: React.FC = () => {
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Report Type</p>
+                      <p className="text-sm text-muted-foreground">
+                        Report Type
+                      </p>
                       <p className="font-medium text-card-foreground">
                         {formData.reportType}
                       </p>
@@ -706,49 +726,43 @@ const CreateReport: React.FC = () => {
                 </div>
 
                 {/* Dynamic Inputs Review */}
-                  {tool.inputFields?.length > 0 && (
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-semibold">
-                        Provided Inputs
-                      </h3>
+                {tool.inputFields && tool.inputFields?.length > 0 && (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Provided Inputs</h3>
 
-                      <div className="bg-white rounded-lg border p-4 space-y-3">
-                        {tool.inputFields
-                          .sort((a, b) => a.sortOrder - b.sortOrder)
-                          .map((field) => {
-                            const value = formData.inputs[field.id]
+                    <div className="bg-white rounded-lg border p-4 space-y-3">
+                      {tool.inputFields
+                        .sort((a, b) => a.sortOrder - b.sortOrder)
+                        .map((field) => {
+                          const value = formData.inputs[field.id];
 
-                            if (!value) return null
+                          if (!value) return null;
 
-                            let displayValue = value
+                          let displayValue = value;
 
-                            if (field.type === "BOOLEAN") {
-                              displayValue = value === "true" ? "Yes" : "No"
-                            }
+                          if (field.type === "BOOLEAN") {
+                            displayValue = value === "true" ? "Yes" : "No";
+                          }
 
-                            return (
-                              <div key={field.id}>
-                                <p className="text-sm text-muted-foreground">
-                                  {field.label}
-                                </p>
-                                <p className="font-medium">
-                                  {displayValue}
-                                </p>
-                              </div>
-                            )
-                          })}
-                      </div>
+                          return (
+                            <div key={field.id}>
+                              <p className="text-sm text-muted-foreground">
+                                {field.label}
+                              </p>
+                              <p className="font-medium">{displayValue}</p>
+                            </div>
+                          );
+                        })}
                     </div>
-                  )}
-                  {/* Uploaded Files Review */}
-                  {formData.uploadedFiles.length > 0 && (
-                    <div className="space-y-3">
-                      <h3 className="text-lg font-semibold">
-                        Uploaded Files
-                      </h3>
+                  </div>
+                )}
+                {/* Uploaded Files Review */}
+                {formData.uploadedFiles.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-semibold">Uploaded Files</h3>
 
-                      <div className="bg-white rounded-lg border p-4 space-y-2">
-                        {formData.uploadedFiles.map((file) => (
+                    <div className="bg-white rounded-lg border p-4 space-y-2">
+                      {formData.uploadedFiles.map((file) => (
                         <div
                           key={file.id}
                           className="flex items-center justify-between"
@@ -766,11 +780,11 @@ const CreateReport: React.FC = () => {
                               variant="outline"
                               onClick={async () => {
                                 try {
-                                  const url = await getSignedUrl(file.id)
-                                  setPreviewFile(file)
-                                  setPreviewUrl(url)
+                                  const url = await getSignedUrl(file.id);
+                                  setPreviewFile(file);
+                                  setPreviewUrl(url);
                                 } catch (e) {
-                                  toast.error("Unable to preview file")
+                                  toast.error("Unable to preview file");
                                 }
                               }}
                             >
@@ -779,23 +793,21 @@ const CreateReport: React.FC = () => {
                           )}
                         </div>
                       ))}
-                      </div>
                     </div>
-                  )}
-                  {/* Notes Review */}
-                  {formData.wizardData.notes && (
-                    <div className="space-y-3">
-                      <h3 className="text-lg font-semibold">
-                        Additional Notes
-                      </h3>
+                  </div>
+                )}
+                {/* Notes Review */}
+                {formData.wizardData.notes && (
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-semibold">Additional Notes</h3>
 
-                      <div className="bg-white rounded-lg border p-4">
-                        <p className="text-sm whitespace-pre-wrap">
-                          {formData.wizardData.notes}
-                        </p>
-                      </div>
+                    <div className="bg-white rounded-lg border p-4">
+                      <p className="text-sm whitespace-pre-wrap">
+                        {formData.wizardData.notes}
+                      </p>
                     </div>
-                  )}
+                  </div>
+                )}
               </motion.div>
             )}
           </motion.div>
@@ -839,44 +851,44 @@ const CreateReport: React.FC = () => {
         </div>
       </div>
       <AnimatePresence>
-      {previewFile && previewUrl && (
-        <motion.div
-          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
+        {previewFile && previewUrl && (
           <motion.div
-            initial={{ scale: 0.95 }}
-            animate={{ scale: 1 }}
-            exit={{ scale: 0.95 }}
-            className="bg-white w-[90%] h-[90%] rounded-xl p-4 flex flex-col"
+            className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
           >
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-semibold text-lg">
-                {previewFile.filename}
-              </h3>
+            <motion.div
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.95 }}
+              className="bg-white w-[90%] h-[90%] rounded-xl p-4 flex flex-col"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-semibold text-lg">
+                  {previewFile.filename}
+                </h3>
 
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setPreviewFile(null)
-                  setPreviewUrl(null)
-                }}
-              >
-                Close
-              </Button>
-            </div>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setPreviewFile(null);
+                    setPreviewUrl(null);
+                  }}
+                >
+                  Close
+                </Button>
+              </div>
 
-            <iframe
-              src={previewUrl}
-              className="flex-1 rounded-md border"
-              title="PDF Preview"
-            />
+              <iframe
+                src={previewUrl}
+                className="flex-1 rounded-md border"
+                title="PDF Preview"
+              />
+            </motion.div>
           </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
