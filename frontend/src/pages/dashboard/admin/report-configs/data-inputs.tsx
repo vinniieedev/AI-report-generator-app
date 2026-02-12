@@ -36,7 +36,7 @@ export default function AdminReportTemplateConfig({
   } = useAdminReportTemplate(isEdit ? templateId! : "");
 
   /* =====================================================
-     TEMPLATE STATE (UPDATED)
+     TEMPLATE STATE
   ===================================================== */
 
   const [templateForm, setTemplateForm] = useState({
@@ -46,7 +46,7 @@ export default function AdminReportTemplateConfig({
     category: "",
     industry: "",
 
-    // NEW AI CONFIG FIELDS
+    // AI CONFIG FIELDS
     systemPrompt: "",
     calculationPrompt: "",
     outputFormatPrompt: "",
