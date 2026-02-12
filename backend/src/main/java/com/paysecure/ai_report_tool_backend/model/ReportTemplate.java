@@ -21,7 +21,7 @@ public class ReportTemplate {
     private UUID id;
 
     @Column(nullable = false, unique = true)
-    private String toolId; // emi, tax, startup-burn
+    private String toolId;
 
     @Column(nullable = false)
     private String title;
@@ -29,8 +29,34 @@ public class ReportTemplate {
     @Column(length = 1000)
     private String description;
 
+    @Column
+    private Double temperature = 0.7;
+
+    @Column
+    private Integer maxTokens = 4000;
+
+    @Column
+    private Boolean active = true;
+
     private String category;
     private String industry;
+
+    /* ===========================
+       PROMPT CONFIGURATION
+    =========================== */
+
+    @Column(columnDefinition = "TEXT")
+    private String systemPrompt;
+
+    @Column(columnDefinition = "TEXT")
+    private String calculationPrompt;
+
+    @Column(columnDefinition = "TEXT")
+    private String outputFormatPrompt;
+
+    /* ===========================
+       INPUT FIELDS
+    =========================== */
 
     @OneToMany(
             mappedBy = "template",
@@ -41,10 +67,6 @@ public class ReportTemplate {
     @OrderBy("sortOrder ASC")
     private List<InputField> inputFields = new ArrayList<>();
 
-    /* -------------------------
-       Helpers
-    ------------------------- */
-
     public void addInputField(InputField field) {
         field.setTemplate(this);
         this.inputFields.add(field);
@@ -54,6 +76,4 @@ public class ReportTemplate {
         field.setTemplate(null);
         this.inputFields.remove(field);
     }
-
-
 }

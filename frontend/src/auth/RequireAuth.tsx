@@ -1,5 +1,5 @@
-import { Navigate, Outlet } from "react-router-dom"
 import { useAuth } from "@/hooks/auth/useAuth"
+import { Navigate, Outlet } from "react-router-dom"
 
 export function RequireAuth() {
   const { user, loading } = useAuth()

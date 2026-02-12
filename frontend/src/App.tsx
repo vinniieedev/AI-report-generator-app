@@ -1,7 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import { ToastContainer } from "react-toastify"
-import "react-toastify/dist/ReactToastify.css"
-
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 import { RequireAuth } from "./auth/RequireAuth";
 import { RequireAdmin } from "./auth/RequireAdmin";
@@ -45,76 +44,96 @@ import AdminExports from "./pages/dashboard/admin/exports";
 import AdminRoles from "./pages/dashboard/admin/roles";
 import AdminReportDataInputs from "./pages/dashboard/admin/report-configs/data-inputs";
 import AdminReportTemplates from "./pages/dashboard/admin/report-configs/admin-report-templates";
+import RoleBasedRedirect from "./auth/RoleBasedRedirect";
+import AdminReportTemplateConfig from "./pages/dashboard/admin/report-configs/data-inputs";
 
 export default function App() {
-  return (<>
-    <Routes>
-      {/* ---------- Public ---------- */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/admin-access-denied" element={<AdminAccessDenied />} />
+  return (
+    <>
+      <Routes>
+        {/* ---------- Public ---------- */}
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/admin-access-denied" element={<AdminAccessDenied />} />
 
-      {/* ---------- Auth ---------- */}
-      <Route element={<RequireAuth />}>
-      {/* ===== USER ===== */}
-        <Route path="/dashboard" element={<DashboardLayout />}>
-          <Route index element={<DashboardOverview />} />
+        {/* ---------- Auth ---------- */}
+        <Route element={<RequireAuth />}>
+          {/* ===== USER ===== */}
+          <Route path="/dashboard" element={<DashboardLayout />}>
+            <Route index element={<DashboardOverview />} />
 
-          <Route path="create-report">
-            <Route index element={<ToolSelection />} />
-            <Route path="wizard/:toolId" element={<CreateReport />} />
+            <Route path="create-report">
+              <Route index element={<ToolSelection />} />
+              <Route path="wizard/:toolId" element={<CreateReport />} />
+            </Route>
+
+            <Route path="my-reports" element={<MyReports />} />
+            <Route path="reports/:reportId" element={<ReportViewer />} />
+            <Route path="drafts" element={<Drafts />} />
+            <Route path="exports" element={<Exports />} />
+            <Route path="billing" element={<Billing />} />
+            <Route path="profile" element={<Profile />} />
           </Route>
 
-          <Route path="my-reports" element={<MyReports />} />
-          <Route path="reports/:reportId" element={<ReportViewer />} />
-          <Route path="drafts" element={<Drafts />} />
-          <Route path="exports" element={<Exports />} />
-          <Route path="billing" element={<Billing />} />
-          <Route path="profile" element={<Profile />} />
+          {/* ===== ADMIN ===== */}
+          <Route element={<RequireAdmin />}>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminOverview />} />
+
+              {/* TOOLS */}
+              {/* TEMPLATE LIST */}
+              <Route path="report-configs" element={<AdminReportConfigs />} />
+
+              {/* CREATE TEMPLATE */}
+              <Route
+                path="report-configs/new"
+                element={<AdminReportTemplateConfig mode="create" />}
+              />
+
+              {/* EDIT TEMPLATE */}
+              <Route
+                path="report-configs/:templateId"
+                element={<AdminReportTemplateConfig mode="edit" />}
+              />
+
+              {/* INPUT FIELDS */}
+              <Route
+                path="report-configs/:templateId/data-inputs"
+                element={<AdminReportDataInputs />}
+              />
+
+              {/* TEMPLATES UNDER TOOL */}
+              <Route
+                path="report-configs/:toolId/templates"
+                element={<AdminReportTemplates />}
+              />
+
+              {/* INPUT FIELDS UNDER TEMPLATE */}
+              <Route
+                path="report-configs/:templateId/data-inputs"
+                element={<AdminReportDataInputs />}
+              />
+
+              <Route path="reports" element={<AdminReports />} />
+              <Route path="drafts" element={<AdminDrafts />} />
+
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="roles" element={<AdminRoles />} />
+
+              <Route path="exports" element={<AdminExports />} />
+              <Route path="activity" element={<AdminActivity />} />
+
+              <Route path="billing" element={<AdminBilling />} />
+              <Route path="settings" element={<AdminSettings />} />
+            </Route>
+          </Route>
         </Route>
-        
-        {/* ===== ADMIN ===== */}
-      <Route element={<RequireAdmin />}>
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<AdminOverview />} />
 
-          {/* TOOLS */}
-          <Route path="report-configs" element={<AdminReportConfigs />} />
-
-          {/* TEMPLATES UNDER TOOL */}
-          <Route
-            path="report-configs/:toolId/templates"
-            element={<AdminReportTemplates />}
-          />
-
-          {/* INPUT FIELDS UNDER TEMPLATE */}
-          <Route
-            path="report-configs/:templateId/data-inputs"
-            element={<AdminReportDataInputs />}
-          />
-
-          <Route path="reports" element={<AdminReports />} />
-          <Route path="drafts" element={<AdminDrafts />} />
-
-          <Route path="users" element={<AdminUsers />} />
-          <Route path="roles" element={<AdminRoles />} />
-
-          <Route path="exports" element={<AdminExports />} />
-          <Route path="activity" element={<AdminActivity />} />
-
-          <Route path="billing" element={<AdminBilling />} />
-          <Route path="settings" element={<AdminSettings />} />
-        </Route>
-      </Route>
-
-        
-      </Route>
-
-      {/* ---------- Fallback ---------- */}
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
-    </Routes>
-    <ToastContainer
+        {/* ---------- Fallback ---------- */}
+        <Route path="*" element={<RoleBasedRedirect />} />
+      </Routes>
+      <ToastContainer
         position="top-right"
         autoClose={3000}
         hideProgressBar={false}
@@ -122,6 +141,7 @@ export default function App() {
         closeOnClick
         pauseOnHover
         draggable
-      /></>
+      />
+    </>
   );
 }

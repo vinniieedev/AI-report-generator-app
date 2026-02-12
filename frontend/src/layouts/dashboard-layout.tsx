@@ -1,8 +1,18 @@
 import { Sidebar } from "@/components/dashboard/user/sidebar"
 import { Topbar } from "@/components/dashboard/user/topbar"
-import { Outlet } from "react-router-dom"
+import { useAuth } from "@/hooks/auth/useAuth"
+import { useEffect } from "react"
+import { Outlet, useNavigate } from "react-router-dom"
 
 export function DashboardLayout() {
+  const { user } = useAuth()
+  const navigate = useNavigate()
+
+useEffect(() => {
+  if (user?.role === "ADMIN") {
+    navigate("/admin")
+  }
+}, [user])
   return (
     <div className="flex min-h-screen bg-background">
       {/* Sidebar */}
