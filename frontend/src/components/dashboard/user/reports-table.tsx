@@ -25,7 +25,13 @@ export function ReportsTable() {
   const loadReports = async () => {
     try {
       const data = await reportsApi.getAll();
-      setReports(data);
+
+      const sortedReports = data.sort(
+        (a: ReportResponse, b: ReportResponse) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+
+      setReports(sortedReports);
     } catch (err) {
       console.error("Failed to load reports:", err);
     } finally {
@@ -105,7 +111,7 @@ export function ReportsTable() {
                 <TableCell>
                   <span
                     className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${getStatusBadge(
-                      report.status
+                      report.status,
                     )}`}
                   >
                     {report.status}
@@ -118,7 +124,9 @@ export function ReportsTable() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => navigate(`/dashboard/reports/${report.id}`)}
+                        onClick={() =>
+                          navigate(`/dashboard/reports/${report.id}`)
+                        }
                         data-testid={`view-report-${report.id}`}
                       >
                         <Eye className="h-4 w-4 mr-1" />
