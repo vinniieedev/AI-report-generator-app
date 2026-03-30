@@ -7,6 +7,7 @@ import com.paysecure.ai_report_tool_backend.model.UploadedFile;
 import com.paysecure.ai_report_tool_backend.model.User;
 import com.paysecure.ai_report_tool_backend.repository.AIRequestRepository;
 import com.paysecure.ai_report_tool_backend.repository.ReportChartRepository;
+import com.paysecure.ai_report_tool_backend.repository.ReportRepository;
 import com.paysecure.ai_report_tool_backend.repository.UploadedFileRepository;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -37,15 +38,18 @@ public class OpenAIService {
     private final UploadedFileRepository uploadedFileRepository;
     private final OkHttpClient httpClient;
     private final Gson gson;
+    private final ReportRepository reportRepository;
 
     public OpenAIService(
             AIRequestRepository aiRequestRepository,
             ReportChartRepository chartRepository,
-            UploadedFileRepository uploadedFileRepository
+            UploadedFileRepository uploadedFileRepository,
+            ReportRepository reportRepository
     ) {
         this.aiRequestRepository = aiRequestRepository;
         this.chartRepository = chartRepository;
         this.uploadedFileRepository = uploadedFileRepository;
+        this.reportRepository = reportRepository;
         this.httpClient = new OkHttpClient.Builder()
                 .connectTimeout(60, TimeUnit.SECONDS)
                 .readTimeout(180, TimeUnit.SECONDS)
@@ -73,19 +77,13 @@ public class OpenAIService {
 
         List<UploadedFile> uploadedFiles = uploadedFileRepository.findByReport(report);
 
-    /* =====================================================
-       BUILD USER PROMPT IN LAYERS
-    ===================================================== */
-
         StringBuilder fullPrompt = new StringBuilder();
 
-        // 1️⃣ Calculation / reasoning instructions
         if (calculationPrompt != null && !calculationPrompt.isBlank()) {
             fullPrompt.append(calculationPrompt).append("\n\n");
         }
 
-        // 2️⃣ Report configuration
-        fullPrompt.append("REPORT CONFIGURATION:\n");
+        fullPrompt.append("REPORT CONTEXT:\n");
         fullPrompt.append("- Industry: ").append(report.getIndustry()).append("\n");
         fullPrompt.append("- Report Type: ").append(report.getReportType()).append("\n");
         fullPrompt.append("- Audience: ").append(report.getAudience()).append("\n");
@@ -93,49 +91,36 @@ public class OpenAIService {
         fullPrompt.append("- Tone: ").append(report.getTone()).append("\n");
         fullPrompt.append("- Depth: ").append(report.getDepth()).append("\n\n");
 
-        // 3️⃣ User dynamic inputs
         if (inputs != null && !inputs.isEmpty()) {
-            fullPrompt.append("USER INPUT DATA:\n");
-            inputs.forEach((key, value) ->
-                    fullPrompt.append("- ").append(key).append(": ").append(value).append("\n")
-            );
-            fullPrompt.append("\n");
+            fullPrompt.append("DATA INPUTS (Authoritative Source):\n");
+            fullPrompt.append(gson.toJson(inputs)).append("\n\n");
         }
 
-        // 4️⃣ Uploaded files
         if (!uploadedFiles.isEmpty()) {
-            fullPrompt.append("UPLOADED DATA FILES:\n");
-            fullPrompt.append("===================\n\n");
-
+            fullPrompt.append("UPLOADED DATA FILES:\n\n");
             for (UploadedFile file : uploadedFiles) {
                 fullPrompt.append("File: ").append(file.getOriginalFilename()).append("\n");
 
                 if (file.getExtractedDataJson() != null) {
-                    fullPrompt.append("Structured Data:\n");
                     fullPrompt.append(file.getExtractedDataJson()).append("\n\n");
                 } else if (file.getExtractedText() != null) {
                     String text = file.getExtractedText();
                     if (text.length() > 5000) {
                         text = text.substring(0, 5000) + "...[truncated]";
                     }
-                    fullPrompt.append("Content:\n").append(text).append("\n\n");
+                    fullPrompt.append(text).append("\n\n");
                 }
             }
         }
 
-        // 5️⃣ Output format instructions
         if (outputFormatPrompt != null && !outputFormatPrompt.isBlank()) {
             fullPrompt.append("\n").append(outputFormatPrompt).append("\n");
         }
 
-    /* =====================================================
-       OPENAI REQUEST
-    ===================================================== */
-
         JsonObject requestBody = new JsonObject();
         requestBody.addProperty("model", defaultModel);
-        requestBody.addProperty("temperature", 0.7);
-        requestBody.addProperty("max_tokens", 4000);
+        requestBody.addProperty("temperature", 0.3);
+        requestBody.addProperty("max_tokens", 3000);
 
         JsonArray messages = new JsonArray();
 
@@ -186,7 +171,6 @@ public class OpenAIService {
 
             JsonObject jsonResponse = gson.fromJson(responseBody, JsonObject.class);
 
-            // Token usage
             if (jsonResponse.has("usage")) {
                 JsonObject usage = jsonResponse.getAsJsonObject("usage");
                 aiRequest.setPromptTokens(usage.get("prompt_tokens").getAsInt());
@@ -205,12 +189,13 @@ public class OpenAIService {
                     .getAsJsonObject("message")
                     .get("content").getAsString();
 
+            String finalMarkdown = parseAndPersistStructuredResponse(content, report);
+            report.setContent(finalMarkdown);
+            reportRepository.save(report);
             aiRequest.setStatus("success");
             aiRequestRepository.save(aiRequest);
 
-            extractAndSaveCharts(content, report);
-
-            return content;
+            return finalMarkdown;
 
         } catch (Exception e) {
             aiRequest.setStatus("error");
@@ -220,60 +205,109 @@ public class OpenAIService {
         }
     }
 
-    private void extractAndSaveCharts(String content, Report report) {
-        // Find all chart JSON blocks
-        String chartPattern = "```chart\\s*\\n([\\s\\S]*?)\\n```";
-        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(chartPattern);
-        java.util.regex.Matcher matcher = pattern.matcher(content);
+    private String parseAndPersistStructuredResponse(String content, Report report) {
 
-        int order = 0;
-        while (matcher.find()) {
-            String chartJson = matcher.group(1).trim();
-            try {
-                JsonObject chartData = gson.fromJson(chartJson, JsonObject.class);
-                
-                ReportChart chart = new ReportChart();
-                chart.setReport(report);
-                chart.setChartType(chartData.has("type") ? chartData.get("type").getAsString() : "bar");
-                chart.setTitle(chartData.has("title") ? chartData.get("title").getAsString() : "Chart " + (order + 1));
-                chart.setDataJson(chartData.has("data") ? chartData.get("data").toString() : chartJson);
-                chart.setOptionsJson(chartData.has("options") ? chartData.get("options").toString() : null);
-                chart.setSortOrder(order++);
+        try {
 
-                chartRepository.save(chart);
-            } catch (Exception e) {
-                // Skip invalid chart JSON
-                System.err.println("Failed to parse chart JSON: " + e.getMessage());
+            // 🔥 STEP 1: Remove markdown code fences if present
+            content = content.trim();
+
+            if (content.startsWith("```")) {
+                content = content
+                        .replaceFirst("^```json", "")
+                        .replaceFirst("^```", "")
+                        .replaceAll("```$", "")
+                        .trim();
             }
+
+            // 🔥 STEP 2: Parse JSON
+            JsonObject structured = gson.fromJson(content, JsonObject.class);
+
+            // 🔥 STEP 3: Clear existing charts
+            chartRepository.deleteByReport(report);
+
+            // 🔥 STEP 4: Extract sections
+            String summary = structured.has("summary")
+                    ? structured.get("summary").getAsString()
+                    : "";
+
+            String calculations = structured.has("calculations")
+                    ? structured.get("calculations").getAsString()
+                    : "";
+
+            String recommendations = structured.has("recommendations")
+                    ? structured.get("recommendations").getAsString()
+                    : "";
+
+            String disclaimer = structured.has("disclaimer")
+                    ? structured.get("disclaimer").getAsString()
+                    : "";
+
+            // 🔥 STEP 5: Save charts
+            if (structured.has("charts")) {
+
+                JsonArray charts = structured.getAsJsonArray("charts");
+
+                int order = 0;
+
+                for (int i = 0; i < charts.size(); i++) {
+
+                    JsonObject chartData = charts.get(i).getAsJsonObject();
+
+                    ReportChart chart = new ReportChart();
+                    chart.setReport(report);
+                    chart.setChartType(chartData.get("type").getAsString());
+                    chart.setTitle(chartData.get("title").getAsString());
+                    chart.setDataJson(chartData.get("data").toString());
+                    chart.setOptionsJson(
+                            chartData.has("options")
+                                    ? chartData.get("options").toString()
+                                    : null
+                    );
+                    chart.setSortOrder(order++);
+
+                    chartRepository.save(chart);
+                }
+            }
+
+            // 🔥 STEP 6: Return clean markdown
+            return summary + "\n\n"
+                    + calculations + "\n\n"
+                    + recommendations + "\n\n"
+                    + disclaimer;
+
+        } catch (Exception e) {
+
+            System.out.println("STRUCTURED PARSE FAILED");
+            e.printStackTrace();
+
+            return content;
         }
     }
 
     private String getDefaultSystemPrompt() {
         return """
-            You are an expert financial analyst and report writer. Your task is to generate professional, 
-            accurate, and insightful financial reports based on the provided data and parameters.
-            
-            Guidelines:
-            1. Structure the report clearly with sections and headings using Markdown
-            2. Use appropriate financial terminology based on the audience
-            3. Include calculations and analysis where relevant
-            4. Provide actionable insights and recommendations
-            5. Maintain the requested tone and depth throughout
-            6. Use tables and bullet points for clarity where appropriate
-            7. Include disclaimers where necessary for financial advice
-            
-            IMPORTANT - Data Visualization:
-            When analyzing data, identify opportunities for visual representation and include chart specifications.
-            For each recommended chart, use this exact format:
-            
-            ```chart
-            {"type": "bar", "title": "Revenue by Quarter", "data": {"labels": ["Q1", "Q2", "Q3", "Q4"], "datasets": [{"label": "Revenue", "data": [100, 150, 200, 180], "backgroundColor": ["#5fcfee", "#9fb3f5", "#e9a9c4", "#fde2b8"]}]}}
-            ```
-            
-            Chart types available: pie, bar, line, doughnut, scatter
-            Use the brand colors: #5fcfee (cyan), #9fb3f5 (purple-blue), #e9a9c4 (pink), #fde2b8 (peach)
-            
-            Format the output in clean, readable Markdown format.
+                You are a senior financial analyst and structured report generator.
+                
+                Strict Rules:
+                1. Never fabricate numbers.
+                2. Only use provided data.
+                3. If data is missing, clearly state assumptions.
+                4. All totals must match calculated values.
+                5. Show formulas before results when calculating.
+                6. Maintain logical consistency throughout.
+                7. Use structured Markdown with clear headings.
+                
+                Chart Rules:
+                - Charts must follow the exact JSON schema provided.
+                - Use only allowed chart types.
+                - Ensure data arrays match label counts.
+                - Do not include commentary inside chart JSON blocks.
+                
+                Output Discipline:
+                - No conversational language.
+                - No explanations about being an AI.
+                - No deviation from required format.
             """;
     }
 }

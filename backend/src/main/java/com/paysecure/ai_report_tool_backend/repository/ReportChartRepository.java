@@ -8,4 +8,6 @@ import java.util.UUID;
 
 public interface ReportChartRepository extends JpaRepository<ReportChart, UUID> {
     List<ReportChart> findByReportOrderBySortOrderAsc(Report report);
+
+    void deleteByReport(Report report);
 }

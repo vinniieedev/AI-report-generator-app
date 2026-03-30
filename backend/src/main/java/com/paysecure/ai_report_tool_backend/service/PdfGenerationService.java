@@ -13,6 +13,7 @@ import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.*;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
+import com.paysecure.ai_report_tool_backend.utils.MarkdownUtils;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -47,7 +48,7 @@ public class PdfGenerationService {
             addMetadataSection(document, report);
 
             // Add main content
-            addContent(document, report);
+            addContent(document, pdf, report);
 
             // Add charts section
             List<ReportChart> charts = chartRepository.findByReportOrderBySortOrderAsc(report);
@@ -67,26 +68,19 @@ public class PdfGenerationService {
     }
 
     private void addHeader(Document document, Report report) {
-        // Title
-        Paragraph title = new Paragraph(report.getTitle())
-                .setFontSize(24)
+
+        document.add(new Paragraph(report.getTitle())
+                .setFontSize(26)
                 .setBold()
                 .setFontColor(PRIMARY_COLOR)
                 .setTextAlignment(TextAlignment.CENTER)
-                .setMarginBottom(10);
-        document.add(title);
+                .setMarginBottom(5));
 
-        // Subtitle with report type
-        Paragraph subtitle = new Paragraph(report.getReportType() + " | " + report.getIndustry())
-                .setFontSize(14)
+        document.add(new Paragraph(report.getReportType() + " | " + report.getIndustry())
+                .setFontSize(13)
                 .setFontColor(ColorConstants.GRAY)
                 .setTextAlignment(TextAlignment.CENTER)
-                .setMarginBottom(20);
-        document.add(subtitle);
-
-        // Divider line
-        document.add(new LineSeparator(new com.itextpdf.kernel.pdf.canvas.draw.SolidLine(1f))
-                .setMarginBottom(20));
+                .setMarginBottom(25));
     }
 
     private void addMetadataSection(Document document, Report report) {
@@ -126,143 +120,198 @@ public class PdfGenerationService {
         return cell;
     }
 
-    private void addContent(Document document, Report report) {
+    private void addContent(Document document, PdfDocument pdf, Report report) {
+
         if (report.getContent() == null || report.getContent().isEmpty()) {
             document.add(new Paragraph("No content available.")
                     .setFontColor(ColorConstants.GRAY));
             return;
         }
 
-        // Parse markdown-like content
-        String content = report.getContent();
-        String[] lines = content.split("\n");
+        try {
+            String markdown = report.getContent();
 
-        for (String line : lines) {
-            line = line.trim();
-            if (line.isEmpty()) {
-                document.add(new Paragraph(" ").setMarginBottom(5));
-                continue;
-            }
+            // Convert Markdown to HTML (use flexmark library recommended)
+            String htmlBody = MarkdownUtils.toHtml(markdown);
 
-            if (line.startsWith("# ")) {
-                // H1
-                document.add(new Paragraph(line.substring(2))
-                        .setFontSize(20)
-                        .setBold()
-                        .setFontColor(PRIMARY_COLOR)
-                        .setMarginTop(15)
-                        .setMarginBottom(10));
-            } else if (line.startsWith("## ")) {
-                // H2
-                document.add(new Paragraph(line.substring(3))
-                        .setFontSize(16)
-                        .setBold()
-                        .setFontColor(SECONDARY_COLOR)
-                        .setMarginTop(12)
-                        .setMarginBottom(8));
-            } else if (line.startsWith("### ")) {
-                // H3
-                document.add(new Paragraph(line.substring(4))
-                        .setFontSize(14)
-                        .setBold()
-                        .setMarginTop(10)
-                        .setMarginBottom(6));
-            } else if (line.startsWith("- ") || line.startsWith("* ")) {
-                // Bullet point
-                document.add(new Paragraph("• " + line.substring(2))
-                        .setMarginLeft(20)
-                        .setMarginBottom(3));
-            } else if (line.matches("^\\d+\\..*")) {
-                // Numbered list
-                document.add(new Paragraph(line)
-                        .setMarginLeft(20)
-                        .setMarginBottom(3));
-            } else if (line.startsWith("> ")) {
-                // Blockquote
-                document.add(new Paragraph(line.substring(2))
-                        .setBackgroundColor(new DeviceRgb(245, 245, 245))
-                        .setPadding(10)
-                        .setItalic()
-                        .setMarginBottom(5));
-            } else if (line.startsWith("---")) {
-                // Horizontal rule
-                document.add(new LineSeparator(new com.itextpdf.kernel.pdf.canvas.draw.SolidLine(0.5f))
-                        .setMarginTop(10)
-                        .setMarginBottom(10));
-            } else if (line.startsWith("**") && line.endsWith("**")) {
-                // Bold
-                document.add(new Paragraph(line.substring(2, line.length() - 2))
-                        .setBold()
-                        .setMarginBottom(5));
-            } else {
-                // Regular paragraph
-                document.add(new Paragraph(line)
-                        .setMarginBottom(5));
-            }
+            String styledHtml = """
+                <html>
+                <head>
+                    <style>
+                        body {
+                            font-family: Helvetica, Arial, sans-serif;
+                            font-size: 11pt;
+                            line-height: 1.6;
+                            color: #333333;
+                        }
+                        h1 {
+                            color: #5fcfee;
+                            font-size: 22px;
+                            margin-top: 25px;
+                        }
+                        h2 {
+                            color: #9fb3f5;
+                            font-size: 18px;
+                            margin-top: 20px;
+                        }
+                        h3 {
+                            font-size: 14px;
+                            margin-top: 15px;
+                        }
+                        table {
+                            border-collapse: collapse;
+                            width: 100%;
+                            margin-top: 10px;
+                            margin-bottom: 20px;
+                        }
+                        table, th, td {
+                            border: 1px solid #dddddd;
+                        }
+                        th {
+                            background-color: #5fcfee;
+                            color: white;
+                            padding: 6px;
+                        }
+                        td {
+                            padding: 6px;
+                        }
+                        ul {
+                            margin-left: 20px;
+                        }
+                        blockquote {
+                            background: #f5f5f5;
+                            padding: 10px;
+                            border-left: 4px solid #5fcfee;
+                        }
+                    </style>
+                </head>
+                <body>
+                """ + htmlBody + """
+                </body>
+                </html>
+                """;
+
+            HtmlConverter.convertToPdf(
+                    styledHtml,
+                    pdf,
+                    new com.itextpdf.html2pdf.ConverterProperties()
+            );
+
+        } catch (Exception e) {
+            document.add(new Paragraph("Failed to render report content.")
+                    .setFontColor(ColorConstants.RED));
         }
     }
 
     private void addChartsSection(Document document, List<ReportChart> charts) {
+
         document.add(new AreaBreak());
 
-        document.add(new Paragraph("Data Visualizations")
+        document.add(new Paragraph("Financial Data Visualizations")
                 .setFontSize(18)
                 .setBold()
                 .setFontColor(PRIMARY_COLOR)
-                .setMarginBottom(15));
-
-        document.add(new Paragraph("The following charts provide visual insights from your data:")
-                .setFontColor(ColorConstants.GRAY)
                 .setMarginBottom(20));
 
         for (ReportChart chart : charts) {
-            // Chart title
+
             document.add(new Paragraph(chart.getTitle())
                     .setFontSize(14)
                     .setBold()
-                    .setMarginTop(15)
                     .setMarginBottom(10));
 
-            // Chart type badge
-            document.add(new Paragraph("Chart Type: " + chart.getChartType().toUpperCase())
-                    .setFontSize(10)
-                    .setFontColor(SECONDARY_COLOR)
-                    .setMarginBottom(10));
+            try {
 
-            // Note about charts
-            document.add(new Paragraph("Note: Interactive charts are available in the web application.")
-                    .setFontSize(10)
-                    .setItalic()
-                    .setFontColor(ColorConstants.GRAY)
-                    .setBackgroundColor(new DeviceRgb(250, 250, 250))
-                    .setPadding(10)
-                    .setMarginBottom(20));
+                com.google.gson.JsonObject chartData =
+                        new com.google.gson.Gson().fromJson(chart.getDataJson(),
+                                com.google.gson.JsonObject.class);
+
+                com.google.gson.JsonArray labels =
+                        chartData.getAsJsonArray("labels");
+
+                com.google.gson.JsonArray datasets =
+                        chartData.getAsJsonArray("datasets");
+
+                if (labels == null || datasets == null || datasets.size() == 0)
+                    continue;
+
+                com.google.gson.JsonObject dataset =
+                        datasets.get(0).getAsJsonObject();
+
+                com.google.gson.JsonArray values =
+                        dataset.getAsJsonArray("data");
+
+                Table table = new Table(UnitValue.createPercentArray(new float[]{2, 2}))
+                        .setWidth(UnitValue.createPercentValue(100))
+                        .setMarginBottom(25);
+
+                table.addHeaderCell(createPremiumHeader("Category"));
+                table.addHeaderCell(createPremiumHeader("Amount"));
+
+                for (int i = 0; i < labels.size(); i++) {
+
+                    String label = labels.get(i).getAsString();
+                    double value = values.get(i).getAsDouble();
+
+                    table.addCell(createPremiumCell(label));
+                    table.addCell(createPremiumCell(formatCurrency(value))
+                            .setTextAlignment(TextAlignment.RIGHT));
+                }
+
+                document.add(table);
+
+            } catch (Exception e) {
+                document.add(new Paragraph("Unable to render visualization data.")
+                        .setFontColor(ColorConstants.RED));
+            }
         }
+    }
+    private Cell createPremiumHeader(String text) {
+        return new Cell()
+                .add(new Paragraph(text).setBold())
+                .setBackgroundColor(PRIMARY_COLOR)
+                .setFontColor(ColorConstants.WHITE)
+                .setPadding(8);
+    }
+
+    private Cell createPremiumCell(String text) {
+        return new Cell()
+                .add(new Paragraph(text))
+                .setPadding(6);
+    }
+
+    private String formatCurrency(double value) {
+        return String.format("₹%,.0f", value);
+    }
+
+    private Cell createTableHeaderCell(String text) {
+        return new Cell()
+                .add(new Paragraph(text).setBold())
+                .setBackgroundColor(PRIMARY_COLOR)
+                .setFontColor(ColorConstants.WHITE)
+                .setPadding(8);
+    }
+
+    private Cell createTableCell(String text) {
+        return new Cell()
+                .add(new Paragraph(text))
+                .setPadding(6);
     }
 
     private void addFooter(Document document) {
+
         document.add(new LineSeparator(new com.itextpdf.kernel.pdf.canvas.draw.SolidLine(0.5f))
-                .setMarginTop(30));
+                .setMarginTop(40));
 
-        Paragraph footer = new Paragraph()
-                .add("Generated by Report Wizard | ")
-                .add("AI-Powered Financial Reports")
-                .setFontSize(10)
+        document.add(new Paragraph("Confidential Financial Analysis Report")
+                .setFontSize(9)
                 .setFontColor(ColorConstants.GRAY)
                 .setTextAlignment(TextAlignment.CENTER)
-                .setMarginTop(10);
+                .setMarginTop(10));
 
-        document.add(footer);
-
-        Paragraph disclaimer = new Paragraph(
-                "This report is generated for informational purposes only. Please consult with qualified " +
-                        "professionals before making any financial decisions.")
+        document.add(new Paragraph("Generated by Report Wizard")
                 .setFontSize(8)
-                .setItalic()
                 .setFontColor(ColorConstants.GRAY)
-                .setTextAlignment(TextAlignment.CENTER)
-                .setMarginTop(10);
-
-        document.add(disclaimer);
+                .setTextAlignment(TextAlignment.CENTER));
     }
 }

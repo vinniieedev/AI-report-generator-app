@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { 
-  ArrowLeft, 
-  Download, 
-  FileText, 
+import {
+  ArrowLeft,
+  Download,
+  FileText,
   Loader2,
   PieChart,
   BarChart3,
   LineChart,
-  FileDown
+  FileDown,
 } from "lucide-react";
 import {
   Chart as ChartJS,
@@ -40,7 +40,7 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
 );
 
 const ReportViewer = () => {
@@ -113,13 +113,15 @@ const ReportViewer = () => {
   const renderChart = (chart: ChartData) => {
     try {
       const chartData = JSON.parse(chart.dataJson);
-      const options = chart.optionsJson ? JSON.parse(chart.optionsJson) : {
-        responsive: true,
-        plugins: {
-          legend: { position: "top" as const },
-          title: { display: true, text: chart.title },
-        },
-      };
+      const options = chart.optionsJson
+        ? JSON.parse(chart.optionsJson)
+        : {
+            responsive: true,
+            plugins: {
+              legend: { position: "top" as const },
+              title: { display: true, text: chart.title },
+            },
+          };
 
       // Set default colors if not provided
       if (chartData.datasets) {
@@ -284,9 +286,7 @@ const ReportViewer = () => {
                     {chart.chartType}
                   </span>
                 </div>
-                <div className="h-64">
-                  {renderChart(chart)}
-                </div>
+                <div className="h-64">{renderChart(chart)}</div>
               </Card>
             ))}
           </div>
@@ -303,7 +303,9 @@ const ReportViewer = () => {
           <div className="prose prose-lg max-w-none dark:prose-invert">
             <div
               dangerouslySetInnerHTML={{
-                __html: renderMarkdown(report.content || "No content available"),
+                __html: renderMarkdown(
+                  report.content || "No content available",
+                ),
               }}
             />
           </div>
@@ -346,12 +348,18 @@ function renderMarkdown(content: string): string {
 
   return content
     .replace(/^### (.*$)/gm, '<h3 class="text-xl font-bold mt-6 mb-3">$1</h3>')
-    .replace(/^## (.*$)/gm, '<h2 class="text-2xl font-bold mt-8 mb-4 text-primary">$1</h2>')
+    .replace(
+      /^## (.*$)/gm,
+      '<h2 class="text-2xl font-bold mt-8 mb-4 text-primary">$1</h2>',
+    )
     .replace(/^# (.*$)/gm, '<h1 class="text-3xl font-bold mt-10 mb-6">$1</h1>')
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*(.*?)\*/g, "<em>$1</em>")
     .replace(/^- (.*$)/gm, '<li class="ml-4">$1</li>')
-    .replace(/^> (.*$)/gm, '<blockquote class="border-l-4 border-primary pl-4 italic my-4">$1</blockquote>')
+    .replace(
+      /^> (.*$)/gm,
+      '<blockquote class="border-l-4 border-primary pl-4 italic my-4">$1</blockquote>',
+    )
     .replace(/---/g, '<hr class="my-6 border-border" />')
     .replace(/\n\n/g, '</p><p class="mb-4">')
     .replace(/^(.+)$/gm, (match) => {

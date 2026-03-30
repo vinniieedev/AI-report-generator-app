@@ -109,6 +109,7 @@ public class ReportService {
     /* -------------------------
        GENERATE REPORT
     ------------------------- */
+
     @Transactional
     public ReportResponse generate(UUID reportId, User user){
 
@@ -143,11 +144,10 @@ public class ReportService {
                     inputs.put(input.getFieldKey(), input.getValue())
             );
 
-            String content;
-
             if (openAIService.isConfigured()) {
 
-                content = openAIService.generateReport(
+                //OpenAIService handles content + chart persistence
+                openAIService.generateReport(
                         report,
                         user,
                         systemPrompt,
@@ -160,8 +160,9 @@ public class ReportService {
 
             } else {
 
-                content = generateMockReport(report, inputs);
+                String mockContent = generateMockReport(report, inputs);
                 report.setAiModel("mock");
+                report.setContent(mockContent);
             }
 
             creditService.deductCredits(
@@ -172,7 +173,6 @@ public class ReportService {
                     "Generated report: " + report.getTitle()
             );
 
-            report.setContent(content);
             report.setStatus(ReportStatus.GENERATED);
             report.setCreditsUsed(CREDITS_PER_REPORT);
             report.setCompletedAt(Instant.now());
