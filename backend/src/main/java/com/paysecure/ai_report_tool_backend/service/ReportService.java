@@ -144,10 +144,11 @@ public class ReportService {
                     inputs.put(input.getFieldKey(), input.getValue())
             );
 
+            String aiResponse;
+
             if (openAIService.isConfigured()) {
 
-                //OpenAIService handles content + chart persistence
-                openAIService.generateReport(
+                aiResponse = openAIService.generateReport(
                         report,
                         user,
                         systemPrompt,
@@ -160,9 +161,62 @@ public class ReportService {
 
             } else {
 
-                String mockContent = generateMockReport(report, inputs);
+                aiResponse = generateMockReport(report, inputs);
                 report.setAiModel("mock");
-                report.setContent(mockContent);
+            }
+
+            String startTag = "---CHARTS_JSON_START---";
+            String endTag = "---CHARTS_JSON_END---";
+
+            int start = aiResponse.indexOf(startTag);
+            int end = aiResponse.indexOf(endTag);
+
+            String chartsJson = null;
+            String cleanContent = aiResponse;
+
+            if (start != -1 && end != -1 && end > start) {
+
+                chartsJson = aiResponse.substring(
+                        start + startTag.length(),
+                        end
+                ).trim();
+
+                cleanContent = aiResponse.substring(0, start).trim();
+            }
+
+            report.setContent(cleanContent);
+            reportRepository.save(report);
+
+            if (chartsJson != null && !chartsJson.isEmpty()) {
+                try {
+                    com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                    com.fasterxml.jackson.databind.JsonNode root = mapper.readTree(chartsJson);
+                    com.fasterxml.jackson.databind.JsonNode charts = root.get("charts");
+
+                    int order = 0;
+
+                    if (charts != null && charts.isArray()) {
+                        for (com.fasterxml.jackson.databind.JsonNode chart : charts) {
+
+                            ReportChart rc = new ReportChart();
+                            rc.setReport(report);
+                            rc.setChartType(chart.get("chartType").asText());
+                            rc.setTitle(chart.get("title").asText());
+
+                            rc.setDataJson(chart.get("data").toString());
+
+                            rc.setOptionsJson(
+                                    chart.has("options") ? chart.get("options").toString() : "{}"
+                            );
+
+                            rc.setSortOrder(order++);
+                            chartRepository.save(rc);
+                        }
+                    }
+
+                } catch (Exception e) {
+                    log.error("Chart parsing failed", e);
+                }
             }
 
             creditService.deductCredits(
