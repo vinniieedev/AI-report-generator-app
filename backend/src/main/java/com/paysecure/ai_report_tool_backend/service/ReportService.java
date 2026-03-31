@@ -181,7 +181,7 @@ public class ReportService {
                         end
                 ).trim();
 
-                cleanContent = aiResponse.substring(0, start).trim();
+                cleanContent = cleanContent = sanitizeMarkdownTables(aiResponse.substring(0, start).trim());
             }
 
             report.setContent(cleanContent);
@@ -337,6 +337,54 @@ public class ReportService {
         lineChart.setDataJson("{\"labels\":[\"Q1\",\"Q2\",\"Q3\",\"Q4\"],\"datasets\":[{\"label\":\"Projected\",\"data\":[100,120,145,180],\"borderColor\":\"#5fcfee\",\"fill\":false},{\"label\":\"Actual\",\"data\":[100,115,140,null],\"borderColor\":\"#e9a9c4\",\"fill\":false}]}");
         lineChart.setSortOrder(2);
         chartRepository.save(lineChart);
+    }
+
+    /**
+     * Fixes malformed Markdown table separator rows produced by LLMs.
+     * Replaces lines like | -- | - | or |--|| with properly spaced separators
+     * that match the column count of the header row immediately above them.
+     */
+    private String sanitizeMarkdownTables(String markdown) {
+        if (markdown == null || markdown.isBlank()) return markdown;
+
+        String[] lines = markdown.split("\n", -1);
+        StringBuilder result = new StringBuilder();
+
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i];
+
+            // Detect a separator row: starts/ends with | and contains only |, -, spaces
+            if (line.matches("\\s*\\|[\\s|\\-]*\\|\\s*")) {
+
+                // Count columns from the PREVIOUS header line
+                int cols = 2; // fallback
+                if (i > 0) {
+                    String header = lines[i - 1].trim();
+                    if (header.startsWith("|") && header.endsWith("|")) {
+                        // Count pipes minus the two boundary ones
+                        cols = header.split("\\|", -1).length - 2;
+                        if (cols < 1) cols = 2;
+                    }
+                }
+
+                // Rebuild a clean separator row
+                StringBuilder sep = new StringBuilder("|");
+                for (int c = 0; c < cols; c++) {
+                    sep.append(" --- |");
+                }
+                result.append(sep).append("\n");
+
+            } else {
+                result.append(line).append("\n");
+            }
+        }
+
+        // Trim trailing newline added by the loop
+        String out = result.toString();
+        if (out.endsWith("\n") && !markdown.endsWith("\n")) {
+            out = out.substring(0, out.length() - 1);
+        }
+        return out;
     }
 
     /* -------------------------
