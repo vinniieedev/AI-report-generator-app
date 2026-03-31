@@ -12,9 +12,13 @@ import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.*;
 import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.html2pdf.HtmlConverter;
+import com.itextpdf.layout.element.IElement;
 import com.itextpdf.layout.properties.UnitValue;
 import com.paysecure.ai_report_tool_backend.utils.MarkdownUtils;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.time.format.DateTimeFormatter;
@@ -29,41 +33,40 @@ public class PdfGenerationService {
     private static final DeviceRgb PRIMARY_COLOR = new DeviceRgb(95, 207, 238);  // #5fcfee
     private static final DeviceRgb SECONDARY_COLOR = new DeviceRgb(159, 179, 245); // #9fb3f5
     private static final DeviceRgb ACCENT_COLOR = new DeviceRgb(233, 169, 196);   // #e9a9c4
+    private static final Logger logger = LoggerFactory.getLogger(PdfGenerationService.class);
 
     public PdfGenerationService(ReportChartRepository chartRepository) {
         this.chartRepository = chartRepository;
     }
 
     public byte[] generatePdf(Report report) {
+        logger.info("Starting PDF generation for reportId={}, title={}", report.getId(), report.getTitle());
+
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             PdfWriter writer = new PdfWriter(baos);
             PdfDocument pdf = new PdfDocument(writer);
             Document document = new Document(pdf, PageSize.A4);
             document.setMargins(50, 50, 50, 50);
 
-            // Add header
             addHeader(document, report);
-
-            // Add metadata section
             addMetadataSection(document, report);
-
-            // Add main content
             addContent(document, pdf, report);
 
-            // Add charts section
             List<ReportChart> charts = chartRepository.findByReportOrderBySortOrderAsc(report);
             if (!charts.isEmpty()) {
                 addChartsSection(document, charts);
             }
 
-            // Add footer
             addFooter(document);
 
             document.close();
+
+            logger.info("PDF generation completed successfully for reportId={}", report.getId());
             return baos.toByteArray();
 
         } catch (Exception e) {
-            throw new RuntimeException("Failed to generate PDF: " + e.getMessage(), e);
+            logger.error("Error generating PDF for reportId={}, error={}", report.getId(), e.getMessage(), e);
+            throw new RuntimeException("Failed to generate PDF", e);
         }
     }
 
@@ -123,6 +126,7 @@ public class PdfGenerationService {
     private void addContent(Document document, PdfDocument pdf, Report report) {
 
         if (report.getContent() == null || report.getContent().isEmpty()) {
+            logger.warn("Report content is empty for reportId={}", report.getId());
             document.add(new Paragraph("No content available.")
                     .setFontColor(ColorConstants.GRAY));
             return;
@@ -130,74 +134,80 @@ public class PdfGenerationService {
 
         try {
             String markdown = report.getContent();
-
-            // Convert Markdown to HTML (use flexmark library recommended)
             String htmlBody = MarkdownUtils.toHtml(markdown);
 
-            String styledHtml = """
-                <html>
-                <head>
-                    <style>
-                        body {
-                            font-family: Helvetica, Arial, sans-serif;
-                            font-size: 11pt;
-                            line-height: 1.6;
-                            color: #333333;
-                        }
-                        h1 {
-                            color: #5fcfee;
-                            font-size: 22px;
-                            margin-top: 25px;
-                        }
-                        h2 {
-                            color: #9fb3f5;
-                            font-size: 18px;
-                            margin-top: 20px;
-                        }
-                        h3 {
-                            font-size: 14px;
-                            margin-top: 15px;
-                        }
-                        table {
-                            border-collapse: collapse;
-                            width: 100%;
-                            margin-top: 10px;
-                            margin-bottom: 20px;
-                        }
-                        table, th, td {
-                            border: 1px solid #dddddd;
-                        }
-                        th {
-                            background-color: #5fcfee;
-                            color: white;
-                            padding: 6px;
-                        }
-                        td {
-                            padding: 6px;
-                        }
-                        ul {
-                            margin-left: 20px;
-                        }
-                        blockquote {
-                            background: #f5f5f5;
-                            padding: 10px;
-                            border-left: 4px solid #5fcfee;
-                        }
-                    </style>
-                </head>
-                <body>
-                """ + htmlBody + """
-                </body>
-                </html>
-                """;
+            logger.info("HTML content length for reportId={} is {}", report.getId(), htmlBody.length());
 
-            HtmlConverter.convertToPdf(
-                    styledHtml,
-                    pdf,
-                    new com.itextpdf.html2pdf.ConverterProperties()
-            );
+            String styledHtml = """
+            <style>
+                body {
+                    font-family: Helvetica, Arial, sans-serif;
+                    font-size: 11pt;
+                    line-height: 1.6;
+                    color: #333333;
+                }
+                h1 {
+                    color: #5fcfee;
+                    font-size: 22px;
+                    margin-top: 20px;
+                }
+                h2 {
+                    color: #9fb3f5;
+                    font-size: 18px;
+                    margin-top: 18px;
+                }
+                h3 {
+                    font-size: 14px;
+                    margin-top: 15px;
+                }
+                p {
+                    margin-bottom: 10px;
+                }
+                table {
+                    border-collapse: collapse;
+                    width: 100%;
+                    margin-top: 10px;
+                    margin-bottom: 20px;
+                }
+                table, th, td {
+                    border: 1px solid #dddddd;
+                }
+                th {
+                    background-color: #5fcfee;
+                    color: white;
+                    padding: 6px;
+                }
+                td {
+                    padding: 6px;
+                }
+                ul {
+                    margin-left: 20px;
+                }
+                blockquote {
+                    background: #f5f5f5;
+                    padding: 10px;
+                    border-left: 4px solid #5fcfee;
+                }
+            </style>
+        """ + htmlBody;
+
+            List<IElement> elements = HtmlConverter.convertToElements(styledHtml);
+
+            Div container = new Div();
+
+            for (IElement element : elements) {
+                if (element instanceof IBlockElement) {
+                    container.add((IBlockElement) element);
+                }
+            }
+
+            document.add(container);
+
+            logger.info("Markdown successfully rendered into PDF for reportId={}", report.getId());
 
         } catch (Exception e) {
+            logger.error("Error rendering content for reportId={}, error={}", report.getId(), e.getMessage(), e);
+
             document.add(new Paragraph("Failed to render report content.")
                     .setFontColor(ColorConstants.RED));
         }
@@ -221,25 +231,20 @@ public class PdfGenerationService {
                     .setMarginBottom(10));
 
             try {
-
                 com.google.gson.JsonObject chartData =
                         new com.google.gson.Gson().fromJson(chart.getDataJson(),
                                 com.google.gson.JsonObject.class);
 
-                com.google.gson.JsonArray labels =
-                        chartData.getAsJsonArray("labels");
+                com.google.gson.JsonArray labels = chartData.getAsJsonArray("labels");
+                com.google.gson.JsonArray datasets = chartData.getAsJsonArray("datasets");
 
-                com.google.gson.JsonArray datasets =
-                        chartData.getAsJsonArray("datasets");
-
-                if (labels == null || datasets == null || datasets.size() == 0)
+                if (labels == null || datasets == null || datasets.size() == 0) {
+                    logger.warn("Invalid chart data for chartId={}", chart.getId());
                     continue;
+                }
 
-                com.google.gson.JsonObject dataset =
-                        datasets.get(0).getAsJsonObject();
-
-                com.google.gson.JsonArray values =
-                        dataset.getAsJsonArray("data");
+                com.google.gson.JsonObject dataset = datasets.get(0).getAsJsonObject();
+                com.google.gson.JsonArray values = dataset.getAsJsonArray("data");
 
                 Table table = new Table(UnitValue.createPercentArray(new float[]{2, 2}))
                         .setWidth(UnitValue.createPercentValue(100))
@@ -249,7 +254,6 @@ public class PdfGenerationService {
                 table.addHeaderCell(createPremiumHeader("Amount"));
 
                 for (int i = 0; i < labels.size(); i++) {
-
                     String label = labels.get(i).getAsString();
                     double value = values.get(i).getAsDouble();
 
@@ -261,11 +265,14 @@ public class PdfGenerationService {
                 document.add(table);
 
             } catch (Exception e) {
+                logger.error("Error rendering chartId={}, error={}", chart.getId(), e.getMessage(), e);
+
                 document.add(new Paragraph("Unable to render visualization data.")
                         .setFontColor(ColorConstants.RED));
             }
         }
     }
+
     private Cell createPremiumHeader(String text) {
         return new Cell()
                 .add(new Paragraph(text).setBold())
