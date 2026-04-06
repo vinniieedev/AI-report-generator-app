@@ -1,12 +1,9 @@
 package com.paysecure.ai_report_tool_backend.dto;
 
-import java.util.List;
-
-public record ToolResponse(
+public record ToolSummaryResponse(
         String id,
         String title,
         String description,
         String category,
-        String industry,
-        List<InputFieldResponse> inputFields
+        String industry
 ) {}

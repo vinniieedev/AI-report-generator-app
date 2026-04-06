@@ -10,12 +10,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import type { ReportResponse } from "@/types/report";
+import type { ReportResponse, ReportSummary } from "@/types/report";
 import { reportsApi } from "@/services";
 
 export function ReportsTable() {
   const navigate = useNavigate();
-  const [reports, setReports] = useState<ReportResponse[]>([]);
+  const [reports, setReports] = useState<ReportSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,7 +27,7 @@ export function ReportsTable() {
       const data = await reportsApi.getAll();
 
       const sortedReports = data.sort(
-        (a: ReportResponse, b: ReportResponse) =>
+        (a: ReportSummary, b: ReportSummary) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       );
 
@@ -50,16 +50,28 @@ export function ReportsTable() {
     return statusStyles[status] || "bg-gray-100 text-gray-700";
   };
 
-  const handleDownload = (report: ReportResponse) => {
-    const blob = new Blob([report.content], { type: "text/markdown" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${report.title.replace(/\s+/g, "_")}.md`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const handleDownload = async (reportId: string) => {
+    try {
+      const report = await reportsApi.getById(reportId); // ✅ full report
+
+      const blob = new Blob([report.content], {
+        type: "text/markdown",
+      });
+
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${report.title.replace(/\s+/g, "_")}.md`;
+
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Download failed", err);
+    }
   };
 
   if (loading) {
@@ -135,7 +147,7 @@ export function ReportsTable() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDownload(report)}
+                        onClick={() => handleDownload(report.id)}
                         data-testid={`download-report-${report.id}`}
                       >
                         <Download className="h-4 w-4 mr-1" />

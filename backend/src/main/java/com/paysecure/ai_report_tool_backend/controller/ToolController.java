@@ -2,6 +2,7 @@ package com.paysecure.ai_report_tool_backend.controller;
 
 import com.paysecure.ai_report_tool_backend.dto.InputFieldResponse;
 import com.paysecure.ai_report_tool_backend.dto.ToolResponse;
+import com.paysecure.ai_report_tool_backend.dto.ToolSummaryResponse;
 import com.paysecure.ai_report_tool_backend.model.InputField;
 import com.paysecure.ai_report_tool_backend.model.ReportTemplate;
 import com.paysecure.ai_report_tool_backend.repository.ReportTemplateRepository;
@@ -26,10 +27,10 @@ public class ToolController {
     ===================================================== */
 
     @GetMapping
-    public List<ToolResponse> getAllTools() {
+    public List<ToolSummaryResponse> getAllTools() {
         return templateRepository.findAll()
                 .stream()
-                .map(this::mapToToolResponse)
+                .map(this::mapToSummaryResponse)
                 .collect(Collectors.toList());
     }
 
@@ -116,6 +117,16 @@ public class ToolController {
     /* =====================================================
        MAPPERS
     ===================================================== */
+
+    private ToolSummaryResponse mapToSummaryResponse(ReportTemplate t) {
+        return new ToolSummaryResponse(
+                t.getToolId(),
+                t.getTitle(),
+                t.getDescription(),
+                t.getCategory(),
+                t.getIndustry()
+        );
+    }
 
     private ToolResponse mapToToolResponse(ReportTemplate t) {
         return new ToolResponse(

@@ -75,3 +75,18 @@ export type ReportResponse = {
   charts?: ChartData[];
   files?: UploadedFileInfo[];
 };
+
+export type ReportSummary = {
+  id: string;
+  title: string;
+  status: string;
+  createdAt: string;
+};
+
+export type ToolSummary = {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  industry: string;
+};

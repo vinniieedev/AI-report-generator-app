@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { Tool } from "@/types/report";
+import type { Tool, ToolSummary } from "@/types/report";
 import { toolsApi } from "@/services";
 
 /* ----------------------------------
@@ -72,7 +72,7 @@ function getCategoryIcon(category: string): string {
 const ToolSelection: React.FC = () => {
   const navigate = useNavigate();
 
-  const [tools, setTools] = useState<Tool[]>([]);
+  const [tools, setTools] = useState<ToolSummary[]>([]);
   const [filteredTools, setFilteredTools] = useState<Tool[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
@@ -92,7 +92,7 @@ const ToolSelection: React.FC = () => {
 
   const fetchTools = async (): Promise<void> => {
     try {
-      const data = await toolsApi.getAll(); 
+      const data = await toolsApi.getAll();
       setTools(data);
       setFilteredTools(data);
     } catch (err) {
@@ -106,9 +106,7 @@ const ToolSelection: React.FC = () => {
     let filtered = [...tools];
 
     if (selectedCategory !== "All") {
-      filtered = filtered.filter(
-        (tool) => tool.category === selectedCategory
-      );
+      filtered = filtered.filter((tool) => tool.category === selectedCategory);
     }
 
     if (searchQuery) {
@@ -116,7 +114,7 @@ const ToolSelection: React.FC = () => {
       filtered = filtered.filter(
         (tool) =>
           tool.title.toLowerCase().includes(q) ||
-          tool.description.toLowerCase().includes(q)
+          tool.description.toLowerCase().includes(q),
       );
     }
 

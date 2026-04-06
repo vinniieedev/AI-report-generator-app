@@ -2,6 +2,7 @@ package com.paysecure.ai_report_tool_backend.service;
 
 import com.paysecure.ai_report_tool_backend.dto.CreateReportRequest;
 import com.paysecure.ai_report_tool_backend.dto.ReportResponse;
+import com.paysecure.ai_report_tool_backend.dto.ReportSummaryResponse;
 import com.paysecure.ai_report_tool_backend.exception.ApiException;
 import com.paysecure.ai_report_tool_backend.model.Report;
 import com.paysecure.ai_report_tool_backend.model.ReportChart;
@@ -246,11 +247,16 @@ public class ReportService {
     /* -------------------------
        GET USER REPORTS
     ------------------------- */
-    public List<ReportResponse> getUserReports(User user) {
+    public List<ReportSummaryResponse> getUserReportSummaries(User user) {
         return reportRepository.findByUser(user)
                 .stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+                .map(r -> new ReportSummaryResponse(
+                        r.getId(),
+                        r.getTitle(),
+                        r.getStatus().name(),
+                        r.getCreatedAt()
+                ))
+                .toList();
     }
 
     /* -------------------------

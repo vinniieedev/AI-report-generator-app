@@ -2,6 +2,7 @@ package com.paysecure.ai_report_tool_backend.controller;
 
 import com.paysecure.ai_report_tool_backend.dto.CreateReportRequest;
 import com.paysecure.ai_report_tool_backend.dto.ReportResponse;
+import com.paysecure.ai_report_tool_backend.dto.ReportSummaryResponse;
 import com.paysecure.ai_report_tool_backend.model.User;
 import com.paysecure.ai_report_tool_backend.security.SecurityUtils;
 import com.paysecure.ai_report_tool_backend.service.ReportService;
@@ -37,10 +38,11 @@ public class ReportController {
     }
 
     @GetMapping
-    public List<ReportResponse> myReports() {
+    public List<ReportSummaryResponse> myReports() {
         UUID userId = SecurityUtils.getCurrentUserId();
         User user = userService.getById(userId);
-        return reportService.getUserReports(user);
+
+        return reportService.getUserReportSummaries(user);
     }
 
     @GetMapping("/{id}")

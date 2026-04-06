@@ -1,8 +1,9 @@
 import { getToken } from "@/lib/utils";
 import { toast } from "react-toastify";
 
-export const API_BASE =
-  import.meta.env.VITE_API_BASE || "http://localhost:8080/api";
+export const API_BASE = import.meta.env.DEV
+  ? "http://localhost:8080/api"
+  : import.meta.env.VITE_API_BASE;
 
 export class ApiError extends Error {
   status: number;
