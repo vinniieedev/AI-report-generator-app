@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import type { ReportResponse, ReportSummary } from "@/types/report";
+import type { ReportSummary } from "@/types/report";
 import { reportsApi } from "@/services";
 
 export function ReportsTable() {
